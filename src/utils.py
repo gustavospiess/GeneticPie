@@ -30,15 +30,9 @@ class Configurable(object):
 			for key in self.get_needs():
 				if key in config:
 					value = config[key]
-					if (self.is_instaciable_dictionary(value)):
-						self.config[key] = Configurable.get_instance(value)
-					else:
-						self.config[key] = value
-						if self.is_list(value):
-							for indice in range(len(value)):
-								element = value[indice]
-								if self.is_instaciable_dictionary(element):
-									self.config[key] = get_instance(element)
+					self.config[key] = self.treat_loadble_value(value)
+				else:
+					p.log('key not found: '+key)
 
 
 	#public
