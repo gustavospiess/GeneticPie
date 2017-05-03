@@ -2,7 +2,7 @@ import sys
 import json
 import os
 
-#Extender may implement [get_needs];
+#Extender may implement [get_condigs];
 class Configurable(object):
 	TYPES = [dict, list, tuple, str, unicode, int, long, float, type(True), type(None)]
 
@@ -26,33 +26,36 @@ class Configurable(object):
 
 	#public
 	def load(self, config):
-		if (config):			
-			for key in self.get_needs():
-				if key in config:
-					value = config[key]
-					self.config[key] = self.treat_loadble_value(value)
+		for key in self.get_condigs().keys():
+			if key in config and type(config[key]) != type(None):
+				value = config[key]
+				self.config[key] = self.treat_loadble_value(value)
+			else:
+				if self.get_condigs()[key] and 'default' in self.get_condigs()[key]:
+					self.config[key] = self.get_condigs()[key]['default']
 				else:
-					p.log('key not found: '+key)
+					p.log('key not found: ' + key + '. And there is not default value')
 
 
 	#public
 	def to_dictionary(self):
 		param = {}
 		for key, value in self.config.items():
-			if self.is_json_type(value):
-				if (self.is_list(value)):
-					param[key] = []
-					for element in value:
-						if element in Configurable.__subclasses__():
-							param[key].append(element.to_dictionary())
-						else:
-							if self.is_json_type(element):
-								param[key].append(element)
+			if not ('default' in self.get_condigs()[key] and self.get_condigs()[key]['default'] == value) :
+				if self.is_json_type(value):
+					if (self.is_list(value)):
+						param[key] = []
+						for element in value:
+							if element in Configurable.__subclasses__():
+								param[key].append(element.to_dictionary())
+							else:
+								if self.is_json_type(element):
+									param[key].append(element)
+					else:
+						param[key] = value
 				else:
-					param[key] = value
-			else:
-				if type(value) in Configurable.__subclasses__():
-					param[key] = value.to_dictionary()
+					if type(value) in Configurable.__subclasses__():
+						param[key] = value.to_dictionary()
 
 		mod = self.__module__
 		if mod == '__main__':
@@ -96,7 +99,7 @@ class Configurable(object):
 		return type(var) in [list, tuple]
 
 	#private
-	def is_json_type(self, var):		
+	def is_json_type(self, var):
 		return type(var) in self.TYPES
 
 	#public
@@ -105,8 +108,17 @@ class Configurable(object):
 		return self
 		
 	#public
-	#unimplemented, may return an iterable of keys/names for the required configurations
-	def get_needs(self):
+	"""
+	Unimplemented, may return an dictionary of keys/names for the required configurations and its details.
+	The details can, but not obligatory will, include.
+	 _______________________________________________________________
+	|Detail		|	Description										|
+	|___________|___________________________________________________|
+	|default	|	Value to be considered when null				|
+	|desc		|	Description to be printed when find an error	|
+	|___________|___________________________________________________|
+	"""
+	def get_condigs(self):
 		raise Exception('not implemented')
 
 class Printer(Configurable):
@@ -121,7 +133,15 @@ class Printer(Configurable):
 			print 'Log: ', log
 
 	#inherited
-	def get_needs(self):
-		return ['msg', 'log']
+	def get_condigs(self):
+		return {'msg' : {
+						'default' : 1, 
+						'desc' : 'Boolean value that alows or not to print messages'
+						},
+				'log' : {
+						'default' : 1,
+						'desc' : 'Boolean value thar alows or not to print logs'
+						}
+				}
 
 p = Configurable.get_instace_json('json/PrinterConfig.json')
