@@ -5,7 +5,15 @@ from random import *
 
 class FloatGen(Gen):
 
-    #inherited
+    #public
+    def get_needed_gens(self):
+        return {}
+
+    #public
+    def is_mutable(self, *param):
+        return True
+
+    #public
     def mutate(self, *param):
         op = random() * 1000
         if (op < 70):
@@ -15,12 +23,14 @@ class FloatGen(Gen):
         if (op >= 100 and op < 102):
             self['value'] = self.get_req_configs['value']['default']
 
+    #public
+    def is_crossoverble(self, *param):
+        return False      
 
-    #inherited
-    def get_req_configs(self):
-        req = super(FloatGen, self).get_req_configs()
-        req['value'] = {'default' : 0}
-        return req
+    #public
+    def crossover(self, *param):
+        raise Exception('not implemented')
+
 
 class FuncCalcGen(Gen):
 
@@ -37,9 +47,10 @@ class FuncCalcGen(Gen):
         })
         return req
 
-    def mutate(self, *param):
-        pass
+    #public
+    def is_crossoverble(self, *param):
+        return False      
 
-i = Individual({'gens' : ['calc'], 'calc' : FuncCalcGen()})
-
-utils.p.log(i)
+    #public
+    def crossover(self, *param):
+        raise Exception('not implemented')
