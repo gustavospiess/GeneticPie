@@ -15,9 +15,9 @@ class Gen():
         raise Exception('not implemented')
 
     #public
-    def is_mutable(self, *param):
+    def is_mutable(self, *param):   
         raise Exception('not implemented')
-        
+
     #public
     def mutate(self, *param):
         raise Exception('not implemented')
