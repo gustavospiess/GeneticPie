@@ -8,7 +8,12 @@ class Gen():
 
     #public
     def __init__(self, *param):
-        pass
+
+        #public
+        name = None
+
+        #public
+        individual = None
 
     #public
     def get_req_gens(self):
@@ -31,6 +36,7 @@ Gen that has a value
 class ValuableGen(Gen):
     def __init__(self, *param):
         self.value = param[0]
+        Gen.__init__(self, param.__getslice__(1, param.__len__()-1))
 
     #public
     def is_mutable(self, *param):
@@ -38,6 +44,9 @@ class ValuableGen(Gen):
 
     def new_instace(self):
         return self.__class__(self.value)
+
+    def __str__(self):
+        return str(self.value);
 
 '''
 Gen that implements an run method
