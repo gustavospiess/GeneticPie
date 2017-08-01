@@ -5,16 +5,16 @@ class FuncFGen(RunnableGen):
 
     def __init__(self, param):
         if 'req_gens' not in param.keys():
-            param['req_gens'] = {'a' : self.get_float_gen, 'b' : self.get_float_gen}
+            param['req_gens'] = {'a' : self.get_gen, 'b' : self.get_gen}
         RunnableGen.__init__(self, param)
 
     #public
     def run(self, param):
-        return self.individual.gens['a'].value * param + self.individual.gens['b'].value
+        return self.individual.gens['a'].run(None) * param + self.individual.gens['b'].run(None)
 
     #private
-    def get_float_gen(self):
-        return geneticPie.Default.IntGen({})
+    def get_gen(self):
+        return geneticPie.Default.FracGen({})   
 
 class FuncFInd(Individual):
 
@@ -35,25 +35,25 @@ class FuncFInd(Individual):
 
         return total
 
-pars = [(1, 12), (2,15)]
+pars = [(5, 10), (15,25)]
 sim = Simulation()
 sim.population.append(FuncFInd({}))
 
 for i in range(9):
     sim.population.append(sim.population[0].new_instace())
 
-for k in range(5000):
-    for individual in sim.population:
-        for g in individual.gens.values():
-            g.mutate()
+for k in range(2000):
     sim.sort_by_fitness(pars)
+    if not sim.population[0].calculate_fitness(pars):
+        break
     for k in range(5):
-        sim.population[k+5] = sim.population[k].new_instace()
+        sim.population[k+5] = sim.population[k].crossover(sim.population[k+1])
 
 sim.sort_by_fitness(pars)
 for ind in sim.population:
-    print((((str(ind.gens['a'].value) if ind.gens['a'].value != 1 else "") + 
-        'x') if ind.gens['a'].value else "" ) + 
-        ('+' if ind.gens['b'].value > 0 else "") + 
-        (str(ind.gens['b'].value) if ind.gens['b'].value else ""))
-    print(' ( erro aproximado de', ind.calculate_fitness(pars), ')')
+    print((((str(ind.gens['a']) if ind.gens['a'].run(None) != 1 else "") + 
+        'x') if ind.gens['a'].run(None) else "" ) + 
+        ('+' if ind.gens['b'].run(None) > 0 else "") + 
+        (str(ind.gens['b']) if ind.gens['b'].run(None) else ""))
+    if (ind.calculate_fitness(pars)):
+        print(' ( erro aproximado de', ind.calculate_fitness(pars), ')')
