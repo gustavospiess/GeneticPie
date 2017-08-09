@@ -35,7 +35,7 @@ class FuncFInd(Individual):
 
         return total
 
-pars = [(5, 10), (15,25)]
+pars = [(5, -5), (15,-15)]
 sim = Simulation()
 sim.population.append(FuncFInd({}))
 
@@ -51,9 +51,9 @@ for k in range(2000):
 
 sim.sort_by_fitness(pars)
 for ind in sim.population:
-    print((((str(ind.gens['a']) if ind.gens['a'].run(None) != 1 else "") + 
-        'x') if ind.gens['a'].run(None) else "" ) + 
-        ('+' if ind.gens['b'].run(None) > 0 else "") + 
-        (str(ind.gens['b']) if ind.gens['b'].run(None) else ""))
+    print((((str(ind.gens['a'])) + 
+        'x')) + 
+        ('+' ) + 
+        (str(ind.gens['b']) ))
     if (ind.calculate_fitness(pars)):
         print(' ( erro aproximado de', ind.calculate_fitness(pars), ')')
