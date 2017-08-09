@@ -1,47 +1,49 @@
 import random
 
-'''
-Public class
-Representation of an changeble information for an possible responce.
-'''
 class Gen():
+    """Public class
+    Representation of an changeble information for an possible responce."""
 
-    '''
-    Public class
-    Executable Mutation for a Gen, must recieve the method 'mutate' to execute when initiated
-    Mutate recieve self and the gen, it must change a something in gen, in order to change its value
-    '''
     class Mutation():
+        """Public class
+        Executable Mutation for a Gen, must recieve the method 'mutate' to execute when initiated
+        Mutate recieve self and the gen, it must change a something in gen, in order to change its value"""
 
-        #public
         def __init__(self, param):
+            #Public initialization method. Take 'mutate' from param as the method to run.
             self.mutate = param['mutate']
 
-        #public
         def mutate(self, gen):
+            #Public mutate Method, change something in Gen in order to change its value.
             raise Exception('not implemented')
 
-    #public
+    #Public Class Validation
     class Validation():
+        """Public class.
+        Executable Validation for a Gen, must recieve the method 'validate' to execute when initiated.
+        validate recieve self and the Gen, it must change a something in Gen,
+        in order to make it have a valid value."""
         
-        #public
         def __init__(self, param):
+            #Public initialization method. Take 'validate' from param as the method to run.
             self.validate = param['validate']
 
-        #public
         def validate(self, gen):
+            #Public validate Method, validate gen in order to make it have an valid value.
             raise Exception('not implemented')
 
+    #Portected Method
     def treate_attr(self, atr, default, param):
         setattr(self, atr, param[atr] if atr in param.keys() else default)
         if default != None and not issubclass(getattr(self, atr).__class__, default.__class__):
             raise Exception(str(atr) + ' must extend ' + default.__class__.__name__)
 
+    #Portected Method
     def treate_list_class(self, lst, cls, msg):
         if [x for x in lst if not (issubclass(x.__class__, cls))]:
             raise Exception(msg)
 
-    #public
+    #Public Method
     def __init__(self, param):
         self.treate_attr('mutation_list', [], param)
         self.treate_attr('validation_list', [], param)
@@ -53,53 +55,51 @@ class Gen():
         self.treate_list_class([x() for x in self.req_gens.values()], Gen, 
             'values in req_gens must extend Gen')
 
-    #public
+    #Public Method
     def mutate(self):
         if self.mutation_list and not random.randint(0,4):
             random.choice(self.mutation_list).mutate(self)
 
-    #public
+    #Public Method
     def validade(self):
         for val in self.validation_list:
             val.validate(self)
 
-    #public
+    #Public Method
     def new_instace(self):
         return self.__class__(self.__dict__)
 
-'''
-Gen that has a value
-'''
+#Gen that has a value
 class ValuableGen(Gen):
 
-    #public
+    #Public Method
     def __init__(self, param):
         Gen.treate_attr(self, 'value', None, param)
         Gen.__init__(self, param)
 
-'''
-Gen that implements an run method
-'''
+"""Public Class.
+Gen that implements an run method."""
 class RunnableGen(Gen):
 
-    #public
+    #Public Method
     def __init__(self, param):
         Gen.treate_attr(self, 'individual', None, param)
         Gen.__init__(self, param)
 
-    #public
+    #Public Method
     def run(self, param):
         raise Exception('not implemented')
 
-'''
-Representation of an possible response.
-'''
 class Individual():
+    """Public Class.
+    Representation of an possible response.
+    """
 
-    #public
+    #Public Method
     def __init__(self, gens):
 
         def select_adds(self, gens):
+
             def is_to_contiue(instance, name, gens, adds):
                 return ((instance not in self.gens.values() and instance not in adds.values()) 
                     and (not issubclass(instance.__class__, gens[name].__class__) if 
@@ -133,11 +133,11 @@ class Individual():
         for w in(x for x in self.gens.values() if issubclass(x.__class__, RunnableGen)):
             w.individual = self
 
-    #public
+    #Public Method
     def calculate_fitness(self, param):
         raise Exception('not implemented')
 
-    #public
+    #Public Method
     def crossover(self, partner):
         if not issubclass(partner.__class__, Individual):
             raise Exception("partner must be an Individual")
@@ -147,17 +147,19 @@ class Individual():
             gen.validade()
         return new_ind
 
-    #public
+    #Public Method
     def new_instace(self):
         return self.__class__({ k : v.new_instace() for k, v in self.gens.items()})
 
+"""Public Class.
+Simulation of the blarp"""
 class Simulation():
 
-    #public
+    #Public Method
     def __init__(self):
         self.population = []
 
-    #public
+    #Public Method
     def sort_by_fitness(self, param):
         def key(ind):
             return ind.calculate_fitness(param)
@@ -271,7 +273,7 @@ class Default():
     int_mut_list = Mut().int_list
     float_mut_list = Mut().float_list
 
-    #public
+    #Public Class IntGen
     class IntGen(ValuableGen):
         def __init__(self, param):
             ValuableGen.__init__(self, {'mutation_list' : Default.Mut.int_list, 'value': 0, **param})
@@ -296,6 +298,7 @@ class Default():
             return self.individual.gens[self.names[0]].value/self.individual.gens[self.names[1]].value
 
         def get_gen(self, param):
+
             def get():
                 return Default.IntGen(param)
             return get
@@ -303,3 +306,5 @@ class Default():
         def __str__(self):
             return (str(self.individual.gens[self.names[0]].value) + '/' +
                 str(self.individual.gens[self.names[1]].value))
+
+help(Gen.Validation)
