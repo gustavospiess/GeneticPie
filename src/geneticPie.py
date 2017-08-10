@@ -196,8 +196,7 @@ class Default():
         def add_1(gen):
             gen.value += 1
         def add_10(gen):
-            gen.value +=.
-            Initialize ValuableGen the same way Gen, adding treatement to 'value' param 10
+            gen.value += 10 
         def add_100(gen):
             gen.value += 100
         def sub_1(gen):
@@ -268,10 +267,9 @@ class Default():
     class Val():
         """Public Class.
         Private Class."""
-  .      def not_null(gen):
+        def not_null(gen):
             if not gen.value:
-                gen.value =.
-                Initialize ValuableGen the same way Gen, adding treatement to 'value' param 1
+                gen.value = 1 
 
         def simplify_frac(gen):
             d1 = gen.individual.gens[gen.names[0]]
@@ -305,23 +303,20 @@ class Default():
         """Public Class.
         Public Class IntGen .represents an integer value."""
         def __init__(self, param):
-            ValuableGen.__init__(self, {'mutation_list' : Default.Mut.int_list, 'value': 0, **param.
-                Initialize ValuableGen the same way Gen, adding treatement to 'value' param)
+            ValuableGen.__init__(self, {'mutation_list' : Default.Mut.int_list, 'value': 0, **param}) 
 
     class FltGen(ValuableGen):
         """Public Class.
         Public Class IntGen .represents an float value."""
         def __init__(self, param):
-            ValuableGen.__init__(self, {'mutation_list' : Default.Mut.float_list, 'value': 0, **param.
-                Initialize ValuableGen the same way Gen, adding treatement to 'value' param)
-
+            ValuableGen.__init__(self, {'mutation_list' : Default.Mut.float_list, 'value': 0, **param}) 
+            
     class FracGen(RunnableGen):
         """Public Class.
         Public Class IntGen .represents an float value get by the division of two integers."""
         def __init__(self, param):
             if 'names' in param.keys():
-                self.names = param['name.
-                Initialize ValuableGen the same way Gen, adding treatement to 'value' param]
+                self.names = param['names']
             else:
                 self.names = [str(random.randint(0,99)) + 'd' + str(x+1) for x in range(2)]
 
@@ -336,14 +331,10 @@ class Default():
         def get_gen(self, param):
             """Public Class.
             Private Method."""
- .           def get():
+            def get():
                 return Default.IntGen(param)
-            return .
-            Initialize ValuableGen the same way Gen, adding treatement to 'value' param
+            return get
 
         def __str__(self):
             return (str(self.individual.gens[self.names[0]].value) + '/' +
                 str(self.individual.gens[self.names[1]].value))
-
-
-help(Gen.Validation)
