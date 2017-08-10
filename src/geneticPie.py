@@ -10,11 +10,11 @@ class Gen():
         Mutate recieve self and the gen, it must change a something in gen, in order to change its value"""
 
         def __init__(self, param):
-            #Public initialization method. Take 'mutate' from param as the method to run.
+            """Public method. Take 'mutate' from param as the method to run."""
             self.mutate = param['mutate']
 
         def mutate(self, gen):
-            #Public mutate Method, change something in Gen in order to change its value.
+            """Public Method, change something in Gen in order to change its value."""
             raise Exception('not implemented')
 
     class Validation():
@@ -24,15 +24,16 @@ class Gen():
         in order to make it have a valid value."""
         
         def __init__(self, param):
-            #Public initialization method. Take 'validate' from param as the method to run.
+            """Public method. Take 'validate' from param as the method to run."""
             self.validate = param['validate']
 
         def validate(self, gen):
-            #Public validate Method, validate gen in order to make it have an valid value.
+            """Public Method, validate gen in order to make it have an valid value."""
             raise Exception('not implemented')
 
     def treate_attr(self, atr, default, param):
-        """Portected Method, validate if atr is in param, and extends default.__class__.
+        """Portected Method.
+        Validate if atr is in param, and extends default.__class__.
         If param[atr] does not extend default.__class__, but is true, raise And Exeption.
         If there is no param[atr], set default to self.atr, else, set paraḿ[atr]"""
         setattr(self, atr, param[atr] if atr in param.keys() else default)
@@ -40,7 +41,8 @@ class Gen():
             raise Exception(str(atr) + ' must extend ' + default.__class__.__name__)
 
     def treate_list_class(self, lst, cls, msg):
-        """Portected Method, validate values in lst extend cls,
+        """Portected Method.
+        Validate values in lst extend cls,
         if there is nay that does not, raise Exeption with msg."""
         if [x for x in lst if not (issubclass(x.__class__, cls))]:
             raise Exception(msg)
@@ -62,24 +64,32 @@ class Gen():
             'values in req_gens must extend Gen')
 
     def mutate(self):
-        #Public Method
+        """Public Method.
+        In 20% of times, it takes one of mutation_list and execute it.
+        If there is not any Mutation avaliable, nothing happens."""
         if self.mutation_list and not random.randint(0,4):
             random.choice(self.mutation_list).mutate(self)
 
     def validade(self):
-        #Public Method
+        """Public Method.
+        Execute every Validation in validation_list."""
         for val in self.validation_list:
             val.validate(self)
 
     def new_instace(self):
-        #Public Method
+        """Public Method.
+        Returns a new instance of the object's class.
+        The parameters will be passed as self.__dict__ to self.__init__"""
         return self.__class__(self.__dict__)
 
 class ValuableGen(Gen):
-    #Gen that has a value
+    """Public Class.
+    Gen that has a value."""
 
     def __init__(self, param):
-        #Public Method
+        """Public Method.
+        Initialize ValuableGen the same way Gen, adding treatement to 'value' param.
+        There's no native validation for 'value'"""
         Gen.treate_attr(self, 'value', None, param)
         Gen.__init__(self, param)
 
@@ -88,21 +98,23 @@ class RunnableGen(Gen):
     Gen that implements an run method."""
 
     def __init__(self, param):
-        #Public Method
+        """Public Method.
+        Initialize ValuableGen the same way Gen, adding treatement to 'individual' param.
+        individual must implement Individual."""
         Gen.treate_attr(self, 'individual', None, param)
         Gen.__init__(self, param)
 
     def run(self, param):
-        #Public Method
+        """Public Method.
+        Must be imlemented by any class that extends Runnablegen"""
         raise Exception('not implemented')
 
 class Individual():
     """Public Class.
-    Representation of an possible response.
-    """
+    Representation of an possible response."""
 
     def __init__(self, gens):
-        #Public Method
+        """Public Method"""
 
         def select_adds(self, gens):
 
@@ -140,11 +152,11 @@ class Individual():
             w.individual = self
 
     def calculate_fitness(self, param):
-        #Public Method
+        """Public Method"""
         raise Exception('not implemented')
 
     def crossover(self, partner):
-        #Public Method
+        """Public Method"""
         if not issubclass(partner.__class__, Individual):
             raise Exception("partner must be an Individual")
         new_ind = self.__class__({k : v.new_instace() for k,v in {**self.gens, **partner.gens}.items()})
@@ -154,7 +166,8 @@ class Individual():
         return new_ind
 
     def new_instace(self):
-        #Public Method
+        """Public Method.
+        Returns a new instance of the object's class."""
         return self.__class__({ k : v.new_instace() for k, v in self.gens.items()})
 
 class Simulation():
@@ -162,11 +175,11 @@ class Simulation():
     Simulation of the blarp"""
 
     def __init__(self):
-        #Public Method
+        """Public Method"""
         self.population = []
 
     def sort_by_fitness(self, param):
-        #Public Method
+        """Public Method"""
         def key(ind):
             return ind.calculate_fitness(param)
 
@@ -178,11 +191,13 @@ class Default():
     Default owns Default Gen, Mutation and Validation implementations."""
 
     class Mut():
-        #Private class.
-        def add_1(gen):
+        """Public Class.
+        Private class."""
+  .      def add_1(gen):
             gen.value += 1
         def add_10(gen):
-            gen.value += 10
+            gen.value +=.
+            Initialize ValuableGen the same way Gen, adding treatement to 'value' param 10
         def add_100(gen):
             gen.value += 100
         def sub_1(gen):
@@ -251,10 +266,12 @@ class Default():
             Gen.Mutation({'mutate' : mod_1})]
 
     class Val():
-        #Private Class.
-        def not_null(gen):
+        """Public Class.
+        Private Class."""
+  .      def not_null(gen):
             if not gen.value:
-                gen.value = 1
+                gen.value =.
+                Initialize ValuableGen the same way Gen, adding treatement to 'value' param 1
 
         def simplify_frac(gen):
             d1 = gen.individual.gens[gen.names[0]]
@@ -285,20 +302,26 @@ class Default():
     float_mut_list = Mut().float_list
 
     class IntGen(ValuableGen):
-        #Public Class IntGen represents an integer value.
+        """Public Class.
+        Public Class IntGen .represents an integer value."""
         def __init__(self, param):
-            ValuableGen.__init__(self, {'mutation_list' : Default.Mut.int_list, 'value': 0, **param})
+            ValuableGen.__init__(self, {'mutation_list' : Default.Mut.int_list, 'value': 0, **param.
+                Initialize ValuableGen the same way Gen, adding treatement to 'value' param)
 
     class FltGen(ValuableGen):
-        #Public Class IntGen represents an float value.
+        """Public Class.
+        Public Class IntGen .represents an float value."""
         def __init__(self, param):
-            ValuableGen.__init__(self, {'mutation_list' : Default.Mut.float_list, 'value': 0, **param})
+            ValuableGen.__init__(self, {'mutation_list' : Default.Mut.float_list, 'value': 0, **param.
+                Initialize ValuableGen the same way Gen, adding treatement to 'value' param)
 
     class FracGen(RunnableGen):
-        #Public Class IntGen represents an float value get by the division of two integers.
+        """Public Class.
+        Public Class IntGen .represents an float value get by the division of two integers."""
         def __init__(self, param):
             if 'names' in param.keys():
-                self.names = param['names']
+                self.names = param['name.
+                Initialize ValuableGen the same way Gen, adding treatement to 'value' param]
             else:
                 self.names = [str(random.randint(0,99)) + 'd' + str(x+1) for x in range(2)]
 
@@ -311,11 +334,16 @@ class Default():
             return self.individual.gens[self.names[0]].value/self.individual.gens[self.names[1]].value
 
         def get_gen(self, param):
-            #Private Method.
-            def get():
+            """Public Class.
+            Private Method."""
+ .           def get():
                 return Default.IntGen(param)
-            return get
+            return .
+            Initialize ValuableGen the same way Gen, adding treatement to 'value' param
 
         def __str__(self):
             return (str(self.individual.gens[self.names[0]].value) + '/' +
                 str(self.individual.gens[self.names[1]].value))
+
+
+help(Gen.Validation)
