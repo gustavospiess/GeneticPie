@@ -193,7 +193,7 @@ class Default():
     class Mut():
         """Public Class.
         Private class."""
-  .      def add_1(gen):
+        def add_1(gen):
             gen.value += 1
         def add_10(gen):
             gen.value +=.
