@@ -1,75 +1,29 @@
 import geneticPie
 from geneticPie import *
-import random
-from random import *
-
-class FloatGen(ValuableGen):
-
-    #public
-    def __init__(self, *param):
-        ValuableGen.__init__(self, param[0])
-        self.default = self.value
-
-    #public
-    def get_req_gens(self):
-        return {}
-
-    #public
-    def is_mutable(self, *param):
-        return True
-
-    #public
-    def mutate(self, *param):
-        percent = int(random() * 100)
-        mutatio = random() + 0.5
-        if percent <= 9:
-            self.value = {
-                0 : self.default,
-                1 : self.value - mutatio,
-                2 : self.value + mutatio,
-                3 : self.value * mutatio,
-                4 : self.value / mutatio,
-                5 : int(self.value),
-                6 : int(self.value) + 0.5,
-                7 : int(self.value) - 0.5,
-                8 : int(self.value) + 0.1,
-                9 : int(self.value) - 0.1
-            }[percent]
-
-    def new_instace(self):
-        return self.__class__(self.value)
 
 class FuncFGen(RunnableGen):
 
-    #public
-    def run(self, *param):
-        return self.individual.gens['a'].value * param[0] + self.individual.gens['b'].value
+    def __init__(self, param):
+        if 'req_gens' not in param.keys():
+            param['req_gens'] = {'a' : self.get_gen, 'b' : self.get_gen}
+        RunnableGen.__init__(self, param)
 
     #public
-    def get_req_gens(self):
-        return {'a' : self.get_float_gen, 'b' : self.get_float_gen}
+    def run(self, param):
+        return self.individual.gens['a'].run(None) * param + self.individual.gens['b'].run(None)
 
     #private
-    def get_float_gen(self):
-        return FloatGen(0)
-
-    #public
-    def is_mutable(self, *param):
-        return False
+    def get_gen(self):
+        return geneticPie.Default.FracGen({})   
 
 class FuncFInd(Individual):
 
     #public
     def __init__(self, gens):
-        if gens:
-            g = gens
-        else:
-            g = {}
-        g['main'] = FuncFGen(self)
-        Individual.__init__(self, g)
+        Individual.__init__(self, {'main': FuncFGen({}), **gens})
 
     #public
-    def calculate_fitness(self, *param):
+    def calculate_fitness(self, param):
         total = 0
         for sub_param in param:
             parcial = self.gens['main'].run(sub_param[0])
@@ -81,24 +35,25 @@ class FuncFInd(Individual):
 
         return total
 
-pars = [(0, 0), (20,20)]
+pars = [(5, -5), (15,-15)]
 sim = Simulation()
-sim.population.append(FuncFInd(None))
+sim.population.append(FuncFInd({}))
 
 for i in range(9):
     sim.population.append(sim.population[0].new_instace())
 
-for k in range(5000):
-    for individual in sim.population:
-        for g in individual.gens.values():
-            if g.is_mutable():
-                g.mutate()
-    sim.sort_by_fitness(*pars)
+for k in range(2000):
+    sim.sort_by_fitness(pars)
+    if not sim.population[0].calculate_fitness(pars):
+        break
     for k in range(5):
-        sim.population[k+5] = sim.population[k].new_instace()
+        sim.population[k+5] = sim.population[k].crossover(sim.population[k+1])
 
-        
-
-#print map((lambda x : (x.calculate_fitness((4, 4)))),sim.population)
+sim.sort_by_fitness(pars)
 for ind in sim.population:
-    print ind.calculate_fitness(*pars), 'a = ', ind.gens['a'].value, 'b = ', ind.gens['b'].value
+    print((((str(ind.gens['a'])) + 
+        'x')) + 
+        ('+' ) + 
+        (str(ind.gens['b']) ))
+    if (ind.calculate_fitness(pars)):
+        print(' ( erro aproximado de', ind.calculate_fitness(pars), ')')
