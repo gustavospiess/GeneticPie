@@ -14,7 +14,8 @@ class Gen():
             self.mutate = param['mutate']
 
         def mutate(self, gen):
-            """Public Method, change something in Gen in order to change its value."""
+            """Public Method, change something in Gen in order to change its value.
+            Must be overrided."""
             raise Exception('not implemented')
 
     class Validation():
@@ -28,7 +29,8 @@ class Gen():
             self.validate = param['validate']
 
         def validate(self, gen):
-            """Public Method, validate gen in order to make it have an valid value."""
+            """Public Method, validate gen in order to make it have an valid value.
+            Must be overrided."""
             raise Exception('not implemented')
 
     def treate_attr(self, atr, default, param):
@@ -105,8 +107,8 @@ class RunnableGen(Gen):
         Gen.__init__(self, param)
 
     def run(self, param):
-        """Public Method.
-        Must be imlemented by any class that extends Runnablegen"""
+        """Public Method. Execute some task, returnnig or not.
+        Must be overrided."""
         raise Exception('not implemented')
 
 class Individual():
@@ -114,11 +116,13 @@ class Individual():
     Representation of an possible response."""
 
     def __init__(self, gens):
-        """Public Method"""
+        """Public Method
+        Initiate Individual inserting gens ant its required Gens."""
 
         def select_adds(self, gens):
-
+            """Private method."""
             def is_to_contiue(instance, name, gens, adds):
+                """Private method."""
                 return ((instance not in self.gens.values() and instance not in adds.values()) 
                     and (not issubclass(instance.__class__, gens[name].__class__) if 
                         name in gens.keys() else True))
@@ -152,7 +156,10 @@ class Individual():
             w.individual = self
 
     def calculate_fitness(self, param):
-        """Public Method"""
+        """Public Method.
+        Calculate and return an numerical indicator of Individual addaptability.
+        Zero is te perfect response, representing that the individual is the most optimizated response.
+        Must be overrided."""
         raise Exception('not implemented')
 
     def crossover(self, partner):
@@ -191,8 +198,7 @@ class Default():
     Default owns Default Gen, Mutation and Validation implementations."""
 
     class Mut():
-        """Public Class.
-        Private class."""
+        """Private class."""
         def add_1(gen):
             gen.value += 1
         def add_10(gen):
@@ -265,8 +271,7 @@ class Default():
             Gen.Mutation({'mutate' : mod_1})]
 
     class Val():
-        """Public Class.
-        Private Class."""
+        """Private Class."""
         def not_null(gen):
             if not gen.value:
                 gen.value = 1 
@@ -301,19 +306,19 @@ class Default():
 
     class IntGen(ValuableGen):
         """Public Class.
-        Public Class IntGen .represents an integer value."""
+        IntGen represents an integer value."""
         def __init__(self, param):
             ValuableGen.__init__(self, {'mutation_list' : Default.Mut.int_list, 'value': 0, **param}) 
 
     class FltGen(ValuableGen):
         """Public Class.
-        Public Class IntGen .represents an float value."""
+        FltGen represents an float value."""
         def __init__(self, param):
             ValuableGen.__init__(self, {'mutation_list' : Default.Mut.float_list, 'value': 0, **param}) 
             
     class FracGen(RunnableGen):
         """Public Class.
-        Public Class IntGen .represents an float value get by the division of two integers."""
+        FracGen represents an float value get by the division of two integers."""
         def __init__(self, param):
             if 'names' in param.keys():
                 self.names = param['names']
@@ -329,8 +334,6 @@ class Default():
             return self.individual.gens[self.names[0]].value/self.individual.gens[self.names[1]].value
 
         def get_gen(self, param):
-            """Public Class.
-            Private Method."""
             def get():
                 return Default.IntGen(param)
             return get
