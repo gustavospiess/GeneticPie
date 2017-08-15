@@ -33,10 +33,6 @@ class Gen():
             Must be overrided."""
             raise Exception('not implemented')
 
-class ValuableGen(Gen):
-    def __init__(self, *param):
-        self.value = param[0]
-        Gen.__init__(self, param.__getslice__(1, param.__len__()-1))
     def treate_attr(self, atr, default, param):
         """Portected Method.
         Validate if atr is in param, and extends default.__class__.
