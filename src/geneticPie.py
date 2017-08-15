@@ -4,14 +4,6 @@ class Gen():
     """Public class
     Representation of an changeble information for an possible responce."""
 
-    #public
-    def __init__(self, *param):
-
-        #public
-        name = None
-
-        #public
-        individual = None
     class Mutation():
         """Public class
         Executable Mutation for a Gen, must recieve the method 'mutate' to execute when initiated
@@ -41,9 +33,6 @@ class Gen():
             Must be overrided."""
             raise Exception('not implemented')
 
-'''
-Gen that has a value
-'''
 class ValuableGen(Gen):
     def __init__(self, *param):
         self.value = param[0]
@@ -102,10 +91,6 @@ class ValuableGen(Gen):
     def __str__(self):
         return str(self.value);
 
-'''
-Gen that implements an run method
-'''
-class RunnableGen(Gen):
 class ValuableGen(Gen):
     """Public Class.
     Gen that has a value."""
