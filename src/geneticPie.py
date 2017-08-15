@@ -163,7 +163,8 @@ class Individual():
         raise Exception('not implemented')
 
     def crossover(self, partner):
-        """Public Method"""
+        """Public Method
+        Return a new instance of the Indiviual class, based on its gens end partner gens."""
         if not issubclass(partner.__class__, Individual):
             raise Exception("partner must be an Individual")
         new_ind = self.__class__({k : v.new_instace() for k,v in {**self.gens, **partner.gens}.items()})
