@@ -4,6 +4,14 @@ class Gen():
     """Public class
     Representation of an changeble information for an possible responce."""
 
+    #public
+    def __init__(self, *param):
+
+        #public
+        name = None
+
+        #public
+        individual = None
     class Mutation():
         """Public class
         Executable Mutation for a Gen, must recieve the method 'mutate' to execute when initiated
@@ -33,6 +41,13 @@ class Gen():
             Must be overrided."""
             raise Exception('not implemented')
 
+'''
+Gen that has a value
+'''
+class ValuableGen(Gen):
+    def __init__(self, *param):
+        self.value = param[0]
+        Gen.__init__(self, param.__getslice__(1, param.__len__()-1))
     def treate_attr(self, atr, default, param):
         """Portected Method.
         Validate if atr is in param, and extends default.__class__.
@@ -84,6 +99,13 @@ class Gen():
         The parameters will be passed as self.__dict__ to self.__init__"""
         return self.__class__(self.__dict__)
 
+    def __str__(self):
+        return str(self.value);
+
+'''
+Gen that implements an run method
+'''
+class RunnableGen(Gen):
 class ValuableGen(Gen):
     """Public Class.
     Gen that has a value."""
