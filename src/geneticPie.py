@@ -16,7 +16,7 @@ class Gen():
         def mutate(self, gen):
             """Public method, change something in Gen in order to change its value.
             Must be overrided."""
-            raise Exception('not implemented')
+            raise NotImplementedError()
 
     class Validation():
         """Public class.
@@ -31,7 +31,7 @@ class Gen():
         def validate(self, gen):
             """Public method, validate gen in order to make it have an valid value.
             Must be overrided."""
-            raise Exception('not implemented')
+            raise NotImplementedError()
 
     def treate_attr(self, atr, default, param):
         """Portected Method.
@@ -40,30 +40,26 @@ class Gen():
         If there is no param[atr], set default to self.atr, else, set paraḿ[atr]"""
         setattr(self, atr, param[atr] if atr in param.keys() else default)
         if default != None and not issubclass(getattr(self, atr).__class__, default.__class__):
-            raise Exception(str(atr) + ' must extend ' + default.__class__.__name__)
+            raise TypeError(str(atr) + ' must extend ' + default.__class__.__name__)
 
     def treate_list_class(self, lst, cls, msg):
         """Portected Method.
         Validate values in lst extend cls,
         if there is nay that does not, raise Exeption with msg."""
         if [x for x in lst if not (issubclass(x.__class__, cls))]:
-            raise Exception(msg)
+            raise TypeError(msg)
 
     def __init__(self, param):
         """Public method.
         It initiates Gen, receiving and dict as param.
-        In param this method takes values with keys: 'mutation_list', 'validation_list', 'req_gens'.
-        The first two as lists of mutation and validation, and the last as an dict for the required other gens.
-        'req_gens' must have functions as value, that returns Gen"""
+        In param this method takes values with keys: 'mutation_list', 'validation_list'.
+        The first two as lists of mutation and validation, and the last as an dict for the required other gens."""
         self.treate_attr('mutation_list', [], param)
         self.treate_attr('validation_list', [], param)
-        self.treate_attr('req_gens', {}, param)
         self.treate_list_class(self.mutation_list, Gen.Mutation, 
             'elements in mutation_list must extend Mutation')
         self.treate_list_class(self.validation_list, Gen.Validation, 
             'elements in validation_list must extend Validation')
-        self.treate_list_class([x() for x in self.req_gens.values()], Gen, 
-            'values in req_gens must extend Gen')
 
     def mutate(self):
         """Public method.
@@ -104,15 +100,19 @@ class RunnableGen(Gen):
 
     def __init__(self, param):
         """Public method.
-        Initialize ValuableGen the same way Gen, adding treatement to 'individual' param.
+        Initialize ValuableGen the same way Gen, adding treatement to 'individual' and 'req_gens' paramethers.        
+        req_gens must be a dict that have functions as value, that returns Gen.
         individual must implement Individual."""
-        Gen.treate_attr(self, 'individual', None, param)
+        self.treate_attr('individual', None, param)
+        self.treate_attr('req_gens', {}, param)
+        self.treate_list_class([x() for x in self.req_gens.values()], Gen, 
+            'values in req_gens must extend Gen')
         Gen.__init__(self, param)
 
     def run(self, param):
         """Public method. Execute some task, returnnig or not.
         Must be overrided."""
-        raise Exception('not implemented')
+        raise NotImplementedError()
 
 class Individual():
     """Public Class.
@@ -120,7 +120,8 @@ class Individual():
 
     def __init__(self, gens):
         """Public method
-        Initiate Individual inserting gens ant its required Gens."""
+        Initiate Individual inserting gens ant its required Gens.
+        gens must be an dict of Gen objects."""
 
         def select_adds(self, gens):
             """Private method."""
@@ -131,7 +132,7 @@ class Individual():
                         name in gens.keys() else True))
 
             adds = {}
-            for g in gens.values():
+            for g in [g for g in gens.values() if issubclass(g.__class__, RunnableGen)]:
                 for gen_name, new_instace in g.req_gens.items():
                     instance = new_instace()
                     instance_name = gen_name
@@ -163,14 +164,17 @@ class Individual():
         Calculate and return an numerical indicator of Individual addaptability.
         Zero is te perfect response, representing that the individual is the most optimizated response.
         Must be overrided."""
-        raise Exception('not implemented')
+        raise NotImplementedError()
 
     def crossover(self, partner):
         """Public method
         Return a new instance of the Indiviual class, based on its gens end partner gens."""
         if not issubclass(partner.__class__, Individual):
-            raise Exception("partner must be an Individual")
-        new_ind = self.__class__({k : v.new_instace() for k,v in {**self.gens, **partner.gens}.items()})
+            raise TypeError("partner must be an Individual")
+
+        gen_name_list = [*self.gens.keys(), *partner.gens.keys()]
+        gen_dict = { name : random.choice((self.gens[name], self.gens[name])) for name in gen_name_list}
+        new_ind = self.__class__({k : v.new_instace() for k,v in gen_dict.items()})
         for gen in new_ind.gens.values():
             gen.mutate()
             gen.validade()
@@ -324,12 +328,11 @@ class Default():
         """Public Class.
         FracGen represents an float value get by the division of two integers."""
         def __init__(self, param):
-            if 'names' in param.keys():
-                self.names = param['names']
-            else:
+            self.treate_attr('names', [], param)
+            if not self.names: 
                 self.names = [str(random.randint(0,99)) + 'd' + str(x+1) for x in range(2)]
 
-            ValuableGen.__init__(self, 
+            RunnableGen.__init__(self, 
                 {'req_gens' : {self.names[0]:self.get_gen({'value' : 0}), 
                     self.names[1]:self.get_gen({'validation_list' : Default.Val.not_null_list, 'value' : 1})},
                     'validation_list':Default.Val.simplify_frac_list,**param})
