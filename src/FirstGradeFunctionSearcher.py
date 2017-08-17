@@ -27,33 +27,40 @@ class FuncFInd(Individual):
         total = 0
         for sub_param in param:
             parcial = self.gens['main'].run(sub_param[0])
-            if parcial < sub_param[1]:
-                parcial = sub_param[1] - parcial
-            else:
-                parcial = parcial - sub_param[1]
+            if parcial != param[1]:
+                if parcial < sub_param[1]:
+                    parcial = sub_param[1] - parcial
+                else:
+                    parcial = parcial - sub_param[1]
             total = total + parcial
 
         return total
 
-pars = [(5, -5), (15,-15)]
+def rint():
+    return random.randint(-20, 20)
+def rpoint():
+    return(rint(), rint())
+pars = [rpoint(), rpoint()]
 sim = Simulation()
 sim.population.append(FuncFInd({}))
 
-for i in range(9):
+for i in range(19):
     sim.population.append(sim.population[0].new_instace())
 
 for k in range(2000):
     sim.sort_by_fitness(pars)
     if not sim.population[0].calculate_fitness(pars):
+        print(k)
         break
-    for k in range(5):
-        sim.population[k+5] = sim.population[k].crossover(sim.population[k+1])
+    for k in range(sim.eliminate()):
+        pair = random.sample(sim.population, 2)
+        sim.population.append(pair[0].crossover(pair[1]))
 
+
+print(pars)
+print()
 sim.sort_by_fitness(pars)
 for ind in sim.population:
-    print((((str(ind.gens['a'])) + 
-        'x')) + 
-        ('+' ) + 
-        (str(ind.gens['b']) ))
+    print(str(ind.gens['a']) +'x+'  + str(ind.gens['b']))
     if (ind.calculate_fitness(pars)):
         print(' ( erro aproximado de', ind.calculate_fitness(pars), ')')

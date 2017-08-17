@@ -189,12 +189,32 @@ class Simulation():
     """Public Class.
     Simulation of the blarp"""
 
-    def __init__(self):
+    def __init__(self, population = None):
         """Public method"""
-        self.population = []
+        if population:
+            self.population = population
+        else:
+            self.population = []
+
+        self.last_param = None
+
+    def eliminate(self, list_selector = None, single_selector = None):
+        self.sort_by_fitness(self.last_param)
+        before = len(self.population)
+        if (list_selector):
+            self.population = list_selector(self.population)
+        elif single_selector:
+            self.population = [ind for ind in self.population if not single_selector(ind)]
+        else:
+            self.population = self.population[0:int((len(self.population)+1)/2)]
+
+        return before-len(self.population)
 
     def sort_by_fitness(self, param):
         """Public method"""
+
+        self.last_param = param
+
         def key(ind):
             return ind.calculate_fitness(param)
 
@@ -347,5 +367,7 @@ class Default():
             return get
 
         def __str__(self):
-            return (str(self.individual.gens[self.names[0]].value) + '/' +
-                str(self.individual.gens[self.names[1]].value))
+            self.validade()
+            up = self.individual.gens[self.names[0]].value
+            down = self.individual.gens[self.names[1]].value            
+            return (str(up) + ('/' + str(down) if (down - 1) else ''))
