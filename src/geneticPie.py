@@ -5,33 +5,36 @@ class Gen():
     """Public Class
     Representation of an changeble information for an possible responce."""
 
-    def treate_attr(self, atr, default, param):
-        """Protected Method
-        Validate if atr is in param, and extends default.__class__.
-        If param[atr] does not extend default.__class__, but is true, raise And Exeption.
-        If there is no param[atr], set default to self.atr, else, set paraḿ[atr]"""
-        setattr(self, atr, param[atr] if atr in param.keys() else default)
-        if default != None and not issubclass(getattr(self, atr).__class__, default.__class__):
-            raise TypeError(str(atr) + ' must extend ' + default.__class__.__name__)
-
-    def treate_list_class(self, lst, cls, msg):
-        """Protected Method
-        Validate values in lst extend cls,
-        if there is nay that does not, raise Exeption with msg."""
-        if [x for x in lst if not (issubclass(x.__class__, cls))]:
-            raise TypeError(msg)
-
     def __init__(self, param):
         """Public Method
         It initiates Gen, receiving and dict as param.
         In param this method takes values with keys: 'mutation_list', 'validation_list'.
         The first two as lists of mutation and validation, and the last as an dict for the required other gens."""
-        self.treate_attr('mutation_list', [], param)
-        self.treate_attr('validation_list', [], param)
-        self.treate_list_class(self.mutation_list, Mutation, 
-            'elements in mutation_list must extend Mutation')
-        self.treate_list_class(self.validation_list, Validation, 
-            'elements in validation_list must extend Validation')
+        self.mutation_list = param['mutation_list'] if 'mutation_list' in param else []
+        self.validation_list = param['validation_list'] if 'validation_list' in param else []
+
+    def all_subclass(self, lst, cls):
+        for x in lst:
+            if not issubclass(x.__class__, cls): return False
+        return True
+
+    @property
+    def validation_list(self): return self.__validation_list
+
+    @validation_list.setter
+    def validation_list(self, vl):
+        if (not self.all_subclass(vl, Validation)):
+            raise TypeError('elements in validation_list must extend Validation')
+        self.__validation_list = vl
+
+    @property
+    def mutation_list(self): return self.__mutation_list
+
+    @mutation_list.setter
+    def mutation_list(self, ml):
+        if (not self.all_subclass(ml, Mutation)):
+            raise TypeError('elements in mutation_list must extend Mutation')
+        self.__mutation_list = ml
 
     def mutate(self):
         """Public Method
@@ -102,8 +105,13 @@ class ValuableGen(Gen):
         """Public Method
         Initialize ValuableGen the same way Gen, adding treatement to 'value' param.
         There's no native validation for 'value'"""
-        Gen.treate_attr(self, 'value', None, param)
+        self.value = param['value'] if 'value' in param else None
         Gen.__init__(self, param)
+
+        @property
+        def value(self): return self.__value
+        @value.setter
+        def value(self, v): self.__value = v
 
 class RunnableGen(Gen):
     """Public Class
@@ -114,11 +122,19 @@ class RunnableGen(Gen):
         Initialize ValuableGen the same way Gen, adding treatement to 'individual' and 'req_gens' paramethers.        
         req_gens must be a dict that have functions as value, that returns Gen.
         individual must implement Individual."""
-        self.treate_attr('individual', None, param)
-        self.treate_attr('req_gens', {}, param)
-        self.treate_list_class([x() for x in self.req_gens.values()], Gen, 
-            'values in req_gens must extend Gen')
+        self.names = param['names'] if 'names' in param else []
+        self.individual = para['individual'] if 'individual' in param else None
+        self.req_gens = param['req_gens'] if 'req_gens' in param else {}
         Gen.__init__(self, param)
+
+        @property
+        def req_gens(self): return self._req_gens
+
+        @req_gens.setter
+        def req_gen(self, rg):
+            if (not all_subclass(rg.values(), Gen)):
+                raise TypeError('values in req_gens must extend Gen')
+            self._req_gens = rg
 
     def run(self, param):
         """Public Method Execute some task, returnnig or not.
@@ -365,14 +381,14 @@ class Default():
         """Public Class
         FracGen represents an float value get by the division of two integers."""
         def __init__(self, param):
-            self.treate_attr('names', [], param)
-            if not self.names: 
-                self.names = [str(random.randint(0,99)) + 'd' + str(x+1) for x in range(2)]
+            if not 'names' in param or len(param['names']) != 2: 
+                param['names'] = [str(random.randint(0,99)) + 'd' + str(x+1) for x in range(2)]
 
             RunnableGen.__init__(self, 
-                {'req_gens' : {self.names[0]:self.get_gen({'value' : 0}), 
-                    self.names[1]:self.get_gen({'validation_list' : Default.Val.not_null_list, 'value' : 1})},
-                    'validation_list':Default.Val.simplify_frac_list,**param})
+                {'req_gens' : {param['names'][0]:self.get_gen({'value' : 0}), 
+                    param['names'][1]:self.get_gen({'validation_list' : Default.Val.not_null_list, 'value' : 1})},
+                    'validation_list':Default.Val.simplify_frac_list,
+                    **param})
 
         def run(self, param):
             """Public Method"""
