@@ -1,43 +1,9 @@
 import random
+import copy
 
 class Gen():
     """Public Class
     Representation of an changeble information for an possible responce."""
-
-    class Mutation():
-        """Public Class
-        Executable Mutation for a Gen, must recieve the method 'mutate' to execute when initiated
-        Mutate recieve self and the gen, it must change a something in gen, in order to change its value"""
-
-        def __init__(self, param = None, mutate = None):
-            """Public Method 
-            Initiate Mutation with mutate (if defined) or param['mutate'].
-            mutate must be an fuction, that receives self (mutation) and gen (Gen)."""
-            self.mutate = mutate if mutate else param['mutate']
-
-        def mutate(self, gen):
-            """Public Method
-            change something in Gen in order to change its value.
-            Must be overrided."""
-            raise NotImplementedError()
-
-    class Validation():
-        """Public Class
-        Executable Validation for a Gen, must recieve the method 'validate' to execute when initiated.
-        validate recieve self and the Gen, it must change a something in Gen,
-        in order to make it have a valid value."""
-        
-        def __init__(self, param = None, validate = None):
-            """Public Method
-            Initiate Validation with validate (if defined) or param['validate'].
-            validate must be an fuction, that receives self (validation) and gen (Gen)."""
-            self.validate = vlaidade if validate else param['validate']
-
-        def validate(self, gen):
-            """Public Method
-            validate gen in order to make it have an valid value.
-            Must be overrided."""
-            raise NotImplementedError()
 
     def treate_attr(self, atr, default, param):
         """Protected Method
@@ -62,9 +28,9 @@ class Gen():
         The first two as lists of mutation and validation, and the last as an dict for the required other gens."""
         self.treate_attr('mutation_list', [], param)
         self.treate_attr('validation_list', [], param)
-        self.treate_list_class(self.mutation_list, Gen.Mutation, 
+        self.treate_list_class(self.mutation_list, Mutation, 
             'elements in mutation_list must extend Mutation')
-        self.treate_list_class(self.validation_list, Gen.Validation, 
+        self.treate_list_class(self.validation_list, Validation, 
             'elements in validation_list must extend Validation')
 
     def mutate(self):
@@ -84,10 +50,49 @@ class Gen():
         """Public Method
         Returns a new instance of the object's class.
         The parameters will be passed as self.__dict__ to self.__init__"""
-        return self.__class__(self.__dict__)
+        return copy.deepcopy(self)
 
     def __str__(self):
         return str(self.value);
+
+
+
+class Mutation():
+    """Public Class
+    Executable Mutation for a Gen, must recieve the method 'mutate' to execute when initiated
+    Mutate recieve self and the gen, it must change a something in gen, in order to change its value"""
+
+    def __init__(self, param = None, mutate = None):
+        """Public Method 
+        Initiate Mutation with mutate (if defined) or param['mutate'].
+        mutate must be an fuction, that receives self (mutation) and gen (Gen)."""
+        self.mutate = mutate if mutate else param['mutate']
+
+    def mutate(self, gen):
+        """Public Method
+        change something in Gen in order to change its value.
+        Must be overrided."""
+        raise NotImplementedError()
+
+class Validation():
+    """Public Class
+    Executable Validation for a Gen, must recieve the method 'validate' to execute when initiated.
+    validate recieve self and the Gen, it must change a something in Gen,
+    in order to make it have a valid value."""
+    
+    def __init__(self, param = None, validate = None):
+        """Public Method
+        Initiate Validation with validate (if defined) or param['validate'].
+        validate must be an fuction, that receives self (validation) and gen (Gen)."""
+        self.validate = vlaidade if validate else param['validate']
+
+    def validate(self, gen):
+        """Public Method
+        validate gen in order to make it have an valid value.
+        Must be overrided."""
+        raise NotImplementedError()
+
+
 
 class ValuableGen(Gen):
     """Public Class
@@ -189,7 +194,7 @@ class Individual():
     def new_instace(self):
         """Public Method
         Returns a new instance of the object's class."""
-        return self.__class__({ k : v.new_instace() for k, v in self.gens.items()})
+        return copy.deepcopy(self)
 
 class Simulation():
     """Public Class
@@ -286,29 +291,29 @@ class Default():
         def mod_100(gen):
             gen.value = gen.value - gen.value%100
 
-        int_list = [Gen.Mutation({'mutate' : add_1}),
-            Gen.Mutation({'mutate' : sub_1}),
-            Gen.Mutation({'mutate' : mul_1}),
-            Gen.Mutation({'mutate' : add_10}),
-            Gen.Mutation({'mutate' : sub_10}),
-            Gen.Mutation({'mutate' : mul_10}),
-            Gen.Mutation({'mutate' : add_100}),
-            Gen.Mutation({'mutate' : sub_100}),
-            Gen.Mutation({'mutate' : mul_100}),
-            Gen.Mutation({'mutate' : mod_10}),
-            Gen.Mutation({'mutate' : mod_100})]
+        int_list = [Mutation({'mutate' : add_1}),
+            Mutation({'mutate' : sub_1}),
+            Mutation({'mutate' : mul_1}),
+            Mutation({'mutate' : add_10}),
+            Mutation({'mutate' : sub_10}),
+            Mutation({'mutate' : mul_10}),
+            Mutation({'mutate' : add_100}),
+            Mutation({'mutate' : sub_100}),
+            Mutation({'mutate' : mul_100}),
+            Mutation({'mutate' : mod_10}),
+            Mutation({'mutate' : mod_100})]
 
         float_list =[*int_list,
-            Gen.Mutation({'mutate' : div_1}),
-            Gen.Mutation({'mutate' : div_10}),
-            Gen.Mutation({'mutate' : div_100}),
-            Gen.Mutation({'mutate' : add_05}),
-            Gen.Mutation({'mutate' : add_01}),
-            Gen.Mutation({'mutate' : add_001}),
-            Gen.Mutation({'mutate' : sub_05}),
-            Gen.Mutation({'mutate' : sub_01}),
-            Gen.Mutation({'mutate' : sub_001}),
-            Gen.Mutation({'mutate' : mod_1})]
+            Mutation({'mutate' : div_1}),
+            Mutation({'mutate' : div_10}),
+            Mutation({'mutate' : div_100}),
+            Mutation({'mutate' : add_05}),
+            Mutation({'mutate' : add_01}),
+            Mutation({'mutate' : add_001}),
+            Mutation({'mutate' : sub_05}),
+            Mutation({'mutate' : sub_01}),
+            Mutation({'mutate' : sub_001}),
+            Mutation({'mutate' : mod_1})]
 
     class Val():
         """Private Class"""
@@ -338,8 +343,8 @@ class Default():
             d1.value = int(d1.value)
             d2.value = int(d2.value)
 
-        not_null_list = [Gen.Validation({'validate' : not_null})]
-        simplify_frac_list = [Gen.Validation({'validate' : simplify_frac})]
+        not_null_list = [Validation({'validate' : not_null})]
+        simplify_frac_list = [Validation({'validate' : simplify_frac})]
 
     int_mut_list = Mut().int_list
     float_mut_list = Mut().float_list
