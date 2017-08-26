@@ -3,26 +3,20 @@ from geneticPie import *
 
 class FuncFGen(RunnableGen):
 
-    def __init__(self, param):
-        if 'req_gens' not in param.keys():
-            param['req_gens'] = {'a' : self.get_gen, 'b' : self.get_gen}
-        RunnableGen.__init__(self, param)
+    def __init__(self):
+        RunnableGen.__init__(self, req_gens = {'a' : self.get_gen, 'b' : self.get_gen})
 
-    #public
     def run(self, param):
-        return self.individual.gens['a'].run(None) * param + self.individual.gens['b'].run(None)
+        return self.individual.gens[self.names[0]].run(None) * param + self.individual.gens[self.names[0]].run(None)
 
-    #private
     def get_gen(self):
         return geneticPie.Default.FracGen({})   
 
 class FuncFInd(Individual):
 
-    #public
     def __init__(self, gens):
-        Individual.__init__(self, {'main': FuncFGen({}), **gens})
+        Individual.__init__(self, {'main': FuncFGen(), **gens})
 
-    #public
     def calculate_fitness(self, param):
         total = 0
         for sub_param in param:
@@ -60,7 +54,7 @@ for k in range(2000):
 print(pars)
 print()
 sim.sort_by_fitness(pars)
-for ind in sim.population:
+for ind in sim.population20
     print(str(ind.gens['a']) +'x+'  + str(ind.gens['b']))
     if (ind.calculate_fitness(pars)):
         print(' ( erro aproximado de', ind.calculate_fitness(pars), ')')
