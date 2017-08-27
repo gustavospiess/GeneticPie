@@ -44,24 +44,6 @@ class Gen(object):
     def __str__(self):
         return str(self.value);
 
-class Mutation(object):
-
-    def __init__(self, mutate = None):
-        self.mutate = mutate if mutate else param['mutate']
-
-    def mutate(self, gen):
-        raise NotImplementedError()
-
-class Validation(object):
-    
-    def __init__(self, validate = None):
-        self.validate = validate if validate else param['validate']
-
-    def validate(self, gen):
-        raise NotImplementedError()
-
-
-
 class ValuableGen(Gen):
 
     def __init__(self, value = None, mutation_list = [], validation_list = []):
@@ -93,94 +75,21 @@ class RunnableGen(Gen):
     def run(self, param):
         raise NotImplementedError()
 
-class Individual(object):
+class Mutation(object):
 
-    def __init__(self, gens):
+    def __init__(self, mutate = None):
+        self.mutate = mutate if mutate else param['mutate']
 
-        def select_adds(self, gens):
-            def is_to_contiue(instance, name, gens, adds):
-                return ((instance not in self.gens.values() and instance not in adds.values()) 
-                    and (not issubclass(instance.__class__, gens[name].__class__) if 
-                        name in gens.keys() else True))
-
-            adds = {}
-            for g in [g for g in gens.values() if issubclass(g.__class__, RunnableGen)]:
-                for gen_name, new_instace in g.req_gens.items():
-                    instance = new_instace()
-                    instance_name = gen_name
-                    i = 0
-                    while is_to_contiue(instance, instance_name, gens, adds):
-                        instance_name = gen_name + ("_"+str(i) if i else "")
-                        if (not instance_name in self.gens.keys() or
-                            issubclass(self.gens[instance_name].__class__, instance.__class__)):
-                            adds[instance_name] = instance
-                        i += 1
-                    if instance_name != gen_name:
-                        g.req_gens[instance_name] = g.req_gens.pop(gen_name)
-                        g.names[g.names.index(gen_name)] = instance_name
-            return adds
-
-        self.gens = gens
-        adds = None
-        first = True
-        while first or adds:
-            first = False
-            adds = select_adds(self, gens)
-            self.gens = {**self.gens, **adds}
-            gens = adds
-
-        for w in(x for x in self.gens.values() if issubclass(x.__class__, RunnableGen)):
-            w.individual = self
-
-    def calculate_fitness(self, param):
+    def mutate(self, gen):
         raise NotImplementedError()
 
-    def crossover(self, partner):
-        if not issubclass(partner.__class__, Individual):
-            raise TypeError("partner must be an Individual")
+class Validation(object):
+    
+    def __init__(self, validate = None):
+        self.validate = validate if validate else param['validate']
 
-        gen_name_list = [*self.gens.keys(), *partner.gens.keys()]
-        gen_dict = { name : random.choice((self.gens[name], self.gens[name])) for name in gen_name_list}
-        new_ind = self.__class__({k : v.new_instace() for k,v in gen_dict.items()})
-        for gen in new_ind.gens.values():
-            gen.mutate()
-            gen.validade()
-        return new_ind
-
-    def new_instace(self):
-        return copy.deepcopy(self)
-
-class Simulation(object):
-
-    def __init__(self, population = None):
-        if population:
-            self.population = population
-        else:
-            self.population = []
-
-        self.ind_params = []
-
-    def eliminate(self, list_selector = None, single_selector = None):
-        self.sort_by_fitness()
-        before = len(self.population)
-        if (list_selector):
-            self.population = list_selector(self.population)
-        elif single_selector:
-            self.population = [ind for ind in self.population if single_selector(ind)]
-        else:
-            self.population = self.population[0:int((len(self.population)+1)/2)]
-
-        return before-len(self.population)
-
-    def sort_by_fitness(self, param = None):
-
-        if param and not param in self.ind_params:
-            self.ind_params.append(param)
-
-        def key(ind):   return ind.calculate_fitness(self.ind_params[-1])
-
-        self.population.sort(key = key)
-        return self
+    def validate(self, gen):
+        raise NotImplementedError()
 
 class Default():
 
@@ -325,3 +234,92 @@ class Default():
             up = self.individual.gens[self.names[0]].value
             down = self.individual.gens[self.names[1]].value            
             return (str(up) + ('/' + str(down) if (down - 1) else ''))
+
+class Individual(object):
+
+    def __init__(self, gens):
+
+        def select_adds(self, gens):
+            def is_to_contiue(instance, name, gens, adds):
+                return ((instance not in self.gens.values() and instance not in adds.values()) 
+                    and (not issubclass(instance.__class__, gens[name].__class__) if 
+                        name in gens.keys() else True))
+
+            adds = {}
+            for g in [g for g in gens.values() if issubclass(g.__class__, RunnableGen)]:
+                for gen_name, new_instace in g.req_gens.items():
+                    instance = new_instace()
+                    instance_name = gen_name
+                    i = 0
+                    while is_to_contiue(instance, instance_name, gens, adds):
+                        instance_name = gen_name + ("_"+str(i) if i else "")
+                        if (not instance_name in self.gens.keys() or
+                            issubclass(self.gens[instance_name].__class__, instance.__class__)):
+                            adds[instance_name] = instance
+                        i += 1
+                    if instance_name != gen_name:
+                        g.req_gens[instance_name] = g.req_gens.pop(gen_name)
+                        g.names[g.names.index(gen_name)] = instance_name
+            return adds
+
+        self.gens = gens
+        adds = None
+        first = True
+        while first or adds:
+            first = False
+            adds = select_adds(self, gens)
+            self.gens = {**self.gens, **adds}
+            gens = adds
+
+        for w in(x for x in self.gens.values() if issubclass(x.__class__, RunnableGen)):
+            w.individual = self
+
+    def calculate_fitness(self, param):
+        raise NotImplementedError()
+
+    def crossover(self, partner):
+        if not issubclass(partner.__class__, Individual):
+            raise TypeError("partner must be an Individual")
+
+        gen_name_list = [*self.gens.keys(), *partner.gens.keys()]
+        gen_dict = { name : random.choice((self.gens[name], self.gens[name])) for name in gen_name_list}
+        new_ind = self.__class__({k : v.new_instace() for k,v in gen_dict.items()})
+        for gen in new_ind.gens.values():
+            gen.mutate()
+            gen.validade()
+        return new_ind
+
+    def new_instace(self):
+        return copy.deepcopy(self)
+
+class Simulation(object):
+
+    def __init__(self, population = None):
+        if population:
+            self.population = population
+        else:
+            self.population = []
+
+        self.ind_params = []
+
+    def eliminate(self, list_selector = None, single_selector = None):
+        self.sort_by_fitness()
+        before = len(self.population)
+        if (list_selector):
+            self.population = list_selector(self.population)
+        elif single_selector:
+            self.population = [ind for ind in self.population if single_selector(ind)]
+        else:
+            self.population = self.population[0:int((len(self.population)+1)/2)]
+
+        return before-len(self.population)
+
+    def sort_by_fitness(self, param = None):
+
+        if param and not param in self.ind_params:
+            self.ind_params.append(param)
+
+        def key(ind):   return ind.calculate_fitness(self.ind_params[-1])
+
+        self.population.sort(key = key)
+        return self
