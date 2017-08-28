@@ -2,8 +2,13 @@ import random
 import copy
 
 class Gen(object):
+    """Public Class
+    Representation of an changeble information for an possible responce."""
 
     def __init__(self, mutation_list = [], validation_list = []):
+        """Public method
+        Initiate Gen with mutation_list ans validation_list."""
+
         self.mutation_list = mutation_list
         self.validation_list = validation_list
 
@@ -31,10 +36,20 @@ class Gen(object):
         self.__mutation_list = ml
 
     def mutate(self):
-        if self.mutation_list and not random.randint(0,4):
-            random.choice(self.mutation_list).mutate(self)
+        """Public Method
+        If there is something in mutation list, execute self.validate
+        and in on in eatch five times, takes one of mutation_list (randomly) and execute it.
+        If there is not any Mutation avaliable, nothing happens."""
+
+        if self.mutation_list:
+            self.validade()
+            if not random.randint(0,4):
+                random.choice(self.mutation_list).mutate(self)
 
     def validade(self):
+        """Public Method
+        Execute every Validation in validation_list."""
+
         for val in self.validation_list:
             val.validate(self)
 
@@ -45,23 +60,31 @@ class Gen(object):
         return str(self.value);
 
 class ValuableGen(Gen):
+    """Public Class
+    Gen that has a value."""
 
     def __init__(self, value = None, mutation_list = [], validation_list = []):
+        """Public method
+        Initiate ValuableGen with value, mutation_list ans validation_list."""
+
         self.value = value
-        Gen.__init__(self, mutation_list = mutation_list, validation_list = validation_list)
+        super(ValuableGen, self).__init__(mutation_list = mutation_list, validation_list = validation_list)
 
         @property
         def value(self): return self.__value
+
         @value.setter
         def value(self, v): self.__value = v
 
 class RunnableGen(Gen):
+    """Public Class
+    Gen that implements an run method."""
 
     def __init__(self, names = [], individual = None, req_gens = {},mutation_list = [], validation_list = []):
         self.names = names if names else [k for k in req_gens.keys()]
         self.individual = individual
         self.req_gens = req_gens
-        Gen.__init__(self, mutation_list = mutation_list, validation_list = validation_list)
+        super(RunnableGen, self).__init__(mutation_list = mutation_list, validation_list = validation_list)
 
         @property
         def req_gens(self): return self._req_gens
@@ -201,12 +224,12 @@ class Default():
     class IntGen(ValuableGen):
         def __init__(self, mutation_list = None, value = 0, validation_list = []):
             if not mutation_list: mutation_list = Default.int_mut_list
-            ValuableGen.__init__(self, mutation_list = mutation_list, value = value, validation_list = validation_list) 
+            super(Default.IntGen, self).__init__(mutation_list = mutation_list, value = value, validation_list = validation_list) 
 
     class FltGen(ValuableGen):
         def __init__(self, mutation_list = None, value = 0, validation_list = []):
             if not mutation_list: mutation_list = Default.float_list
-            ValuableGen.__init__(self, mutation_list = mutation_list, value = value, validation_list = validation_list) 
+            super(Default.FltGen, self).__init__(mutation_list = mutation_list, value = value, validation_list = validation_list) 
             
     class FracGen(RunnableGen):
         def __init__(self, names = [], individual = None, req_gens = {},mutation_list = [], validation_list = []):
@@ -216,10 +239,9 @@ class Default():
             r1 = self.get_gen(validation_list =  Default.Val.not_null_list, value = 1)
             r2 = self.get_gen(value = 1)
 
-            RunnableGen.__init__(self, 
-                req_gens = {names[0]:r2, names[1]:r1},
-                    validation_list = Default.Val.simplify_frac_list,
-                    names = names, individual = individual, mutation_list = mutation_list)
+            super(Default.FracGen, self).__init__(req_gens = {names[0]:r2, names[1]:r1},
+                    validation_list = Default.Val.simplify_frac_list, names = names,
+                    individual = individual, mutation_list = mutation_list)
 
         def run(self, param):
             return self.individual.gens[self.names[0]].value/self.individual.gens[self.names[1]].value
