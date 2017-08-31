@@ -1,5 +1,14 @@
 import random
 import copy
+from time import asctime
+
+log_l = []
+
+def log_dec(method):
+    def log(*param, **key_param):
+        log_l.append(str(method.__name__) + 'at' + str(asctime()))
+        return method(*param, **key_param)
+    return log
 
 class Gen(object):
     """Public Class
@@ -384,6 +393,7 @@ class Simulation(object):
         self.population = population
         self.ind_params = []
 
+    @log_dec
     def eliminate(self, list_selector = None, single_selector = None):
         """Public Method
         Sort population using the last value passad to this object's attribute sort_by_fitness.
@@ -403,6 +413,7 @@ class Simulation(object):
 
         return before-len(self.population)
 
+    @log_dec
     def sort_by_fitness(self, param = None):
 
         if param and not param in self.ind_params:

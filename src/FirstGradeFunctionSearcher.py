@@ -41,7 +41,7 @@ sim.population.append(FuncFInd({}))
 for i in range(19):
     sim.population.append(sim.population[0].new_instace())
 
-for k in range(2000):
+for k in range(200):
     sim.sort_by_fitness(pars)
     if not sim.population[0].calculate_fitness(pars):
         print(k)
@@ -58,3 +58,5 @@ for ind in sim.population:
     print(str(ind.gens['a']) +'x+'  + str(ind.gens['b']))
     if (ind.calculate_fitness(pars)):
         print(' ( erro aproximado de', ind.calculate_fitness(pars), ')')
+
+print(log_l)
