@@ -13,6 +13,9 @@ class Gen(object):
         self.validation_list = validation_list
 
     def all_subclass(self, lst, cls):
+        """Protected method
+        verify if all elements in iterable lst extends cls"""
+
         for x in lst:
             if not issubclass(x.__class__, cls): return False
         return True
@@ -80,7 +83,10 @@ class RunnableGen(Gen):
     """Public Class
     Gen that implements an run method."""
 
-    def __init__(self, names = [], individual = None, req_gens = {},mutation_list = [], validation_list = []):
+    def __init__(self, names = [], individual = None, req_gens = {}, mutation_list = [], validation_list = []):
+        """Public method
+        Iinitiate RunnableGen with names, individual, req_gen, mutation_list and validation_list.
+        """
         self.names = names if names else [k for k in req_gens.keys()]
         self.individual = individual
         self.req_gens = req_gens
@@ -107,6 +113,9 @@ class Mutation(object):
     Mutate recieve self and the gen, it must change a something in gen, in order to change its value"""
 
     def __init__(self, mutate = None):
+        """Public method
+        Initiate Mutation with mutate param"""
+
         self.mutate = mutate if mutate else param['mutate']
 
     def mutate(self, gen):
@@ -123,6 +132,9 @@ class Validation(object):
     in order to make it have a valid value."""
     
     def __init__(self, validate = None):
+        """Public method
+        Initiate Validation with validate param"""
+
         self.validate = validate if validate else param['validate']
 
     def validate(self, gen):
@@ -264,7 +276,7 @@ class Default():
     class FracGen(RunnableGen):
         """Public Class
         FracGen represents an float value get by the division of two integers."""
-        
+
         def __init__(self, names = [], individual = None, req_gens = {},mutation_list = [], validation_list = []):
             if names or len(names) != 2: 
                 names = [str(random.randint(0,99)) + 'd' + str(x+1) for x in range(2)]
@@ -368,12 +380,8 @@ class Simulation(object):
     """Public Class
     Simulation of the blarp"""
 
-    def __init__(self, population = None):
-        if population:
-            self.population = population
-        else:
-            self.population = []
-
+    def __init__(self, population = []):
+        self.population = population
         self.ind_params = []
 
     def eliminate(self, list_selector = None, single_selector = None):
