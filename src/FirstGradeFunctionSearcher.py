@@ -54,7 +54,7 @@ for k in range(2000):
 print(pars)
 print()
 sim.sort_by_fitness(pars)
-for ind in sim.population20
+for ind in sim.population:
     print(str(ind.gens['a']) +'x+'  + str(ind.gens['b']))
     if (ind.calculate_fitness(pars)):
         print(' ( erro aproximado de', ind.calculate_fitness(pars), ')')
