@@ -96,6 +96,9 @@ class RunnableGen(Gen):
             self._req_gens = rg
 
     def run(self, param):
+        """Public Method Execute some task, returnnig or not.
+        Must be overrided."""
+
         raise NotImplementedError()
 
 class Mutation(object):
@@ -107,19 +110,35 @@ class Mutation(object):
         self.mutate = mutate if mutate else param['mutate']
 
     def mutate(self, gen):
+        """Public Method
+        change something in Gen in order to change its value.
+        Must be overrided."""
+
         raise NotImplementedError()
 
 class Validation(object):
+    """Public Class
+    Executable Validation for a Gen, must recieve the method 'validate' to execute when initiated.
+    validate recieve self and the Gen, it must change a something in Gen,
+    in order to make it have a valid value."""
     
     def __init__(self, validate = None):
         self.validate = validate if validate else param['validate']
 
     def validate(self, gen):
+        """Public Method
+        validate gen in order to make it have an valid value.
+        Must be overrided."""
+
         raise NotImplementedError()
 
 class Default():
+    """Public Static Class.
+    Default owns Default Gen, Mutation and Validation implementations."""
 
     class Mut():
+        """Private Class"""
+
         def add_1(gen):
             gen.value += 1
         def add_10(gen):
@@ -192,6 +211,8 @@ class Default():
             Mutation(mutate = mod_1)]
 
     class Val():
+        """Private Class"""
+
         def not_null(gen):
             if not gen.value:
                 gen.value = 1 
@@ -225,16 +246,25 @@ class Default():
     float_mut_list = Mut().float_list
 
     class IntGen(ValuableGen):
+        """Public Class
+        IntGen represents an integer value."""
+
         def __init__(self, mutation_list = None, value = 0, validation_list = []):
             if not mutation_list: mutation_list = Default.int_mut_list
             super(Default.IntGen, self).__init__(mutation_list = mutation_list, value = value, validation_list = validation_list) 
 
     class FltGen(ValuableGen):
+        """Public Class
+        FltGen represents an float value."""
+
         def __init__(self, mutation_list = None, value = 0, validation_list = []):
             if not mutation_list: mutation_list = Default.float_list
             super(Default.FltGen, self).__init__(mutation_list = mutation_list, value = value, validation_list = validation_list) 
             
     class FracGen(RunnableGen):
+        """Public Class
+        FracGen represents an float value get by the division of two integers."""
+        
         def __init__(self, names = [], individual = None, req_gens = {},mutation_list = [], validation_list = []):
             if names or len(names) != 2: 
                 names = [str(random.randint(0,99)) + 'd' + str(x+1) for x in range(2)]
@@ -261,11 +291,17 @@ class Default():
             return (str(up) + ('/' + str(down) if (down - 1) else ''))
 
 class Individual(object):
+    """Public Class
+    Representation of an possible response."""
 
     def __init__(self, gens):
 
         def select_adds(self, gens):
+            """Private Method"""
+
             def is_to_contiue(instance, name, gens, adds):
+                """Private Method"""
+
                 return ((instance not in self.gens.values() and instance not in adds.values()) 
                     and (not issubclass(instance.__class__, gens[name].__class__) if 
                         name in gens.keys() else True))
@@ -300,9 +336,17 @@ class Individual(object):
             w.individual = self
 
     def calculate_fitness(self, param):
+        """Public Method
+        Calculate and return an numerical indicator of Individual addaptability.
+        Zero is te perfect response, representing that the individual is the most optimizated response.
+        Must be overrided."""
+
         raise NotImplementedError()
 
     def crossover(self, partner):
+        """Public Method
+        Return a new instance of the Indiviual class, based on its gens end partner gens."""
+
         if not issubclass(partner.__class__, Individual):
             raise TypeError("partner must be an Individual")
 
@@ -315,9 +359,14 @@ class Individual(object):
         return new_ind
 
     def new_instace(self):
+        """Public Method
+        Returns a new instance of the object's class."""
+
         return copy.deepcopy(self)
 
 class Simulation(object):
+    """Public Class
+    Simulation of the blarp"""
 
     def __init__(self, population = None):
         if population:
@@ -328,6 +377,13 @@ class Simulation(object):
         self.ind_params = []
 
     def eliminate(self, list_selector = None, single_selector = None):
+        """Public Method
+        Sort population using the last value passad to this object's attribute sort_by_fitness.
+        If list_selector is received, the new population is the return of it.
+        list_selector must be a function that receive the current population as paramether
+        Else, if single_selector is received, the new population will be the part of 
+        the current that being passed to single_selector makes it return true"""
+
         self.sort_by_fitness()
         before = len(self.population)
         if (list_selector):
