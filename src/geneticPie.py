@@ -99,6 +99,9 @@ class RunnableGen(Gen):
         raise NotImplementedError()
 
 class Mutation(object):
+    """Public Class
+    Executable Mutation for a Gen, must recieve the method 'mutate' to execute when initiated
+    Mutate recieve self and the gen, it must change a something in gen, in order to change its value"""
 
     def __init__(self, mutate = None):
         self.mutate = mutate if mutate else param['mutate']
