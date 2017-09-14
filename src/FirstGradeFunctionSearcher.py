@@ -59,4 +59,4 @@ for ind in sim.population:
     if (ind.calculate_fitness(pars)):
         print(' ( erro aproximado de', ind.calculate_fitness(pars), ')')
 
-print(log_l)
+print(logger.logs)

@@ -1,14 +1,55 @@
 import random
 import copy
+import json
 from time import asctime
 
-log_l = []
+debug = False
 
-def log_dec(method):
-    def log(*param, **key_param):
-        log_l.append(str(method.__name__) + 'at' + str(asctime()))
-        return method(*param, **key_param)
-    return log
+class Logger(object):
+
+    def __init__(self, print_log = False, list_log = False):
+        if list_log:
+            self.logs = []
+
+        self.config = {
+            'print_log' : print_log,
+            'list_log' : list_log
+        }
+
+        def p_log(log): print(log)
+        def l_log(log): self.logs.append(log)
+
+        self.methods = {
+            'print_log' : p_log,
+            'list_log' : l_log
+        }
+
+        self.on = len([x for x in self.config.keys() if self.config[x]]) > 0
+
+        def dec(old_method):
+            if not self.on:
+                return old_method
+            def new_method(*param, **key_param):
+                log = {'input' : str(param) + str(key_param),
+                        'start_time' : str(asctime()),
+                        'method' : old_method.__name__}
+                output = old_method(*param, **key_param)
+                log['output'] = output
+                log['end_time'] = str(asctime())
+                self.log(log)
+
+                return output
+            return new_method
+
+        self.decorator = dec
+
+    def log(self, log): 
+        for method in self.config.keys():
+            if self.config[method]:
+                self.methods[method](log)
+
+logger = Logger(list_log = debug)
+
 
 class Gen(object):
     """Public Class
@@ -87,6 +128,9 @@ class ValuableGen(Gen):
 
         @value.setter
         def value(self, v): self.__value = v
+
+    def __str__(self):
+        return self.__class__.name + ' (' + self.value + ')'
 
 class RunnableGen(Gen):
     """Public Class
@@ -315,6 +359,7 @@ class Individual(object):
     """Public Class
     Representation of an possible response."""
 
+    @logger.decorator
     def __init__(self, gens):
 
         def select_adds(self, gens):
@@ -364,6 +409,7 @@ class Individual(object):
 
         raise NotImplementedError()
 
+    @logger.decorator
     def crossover(self, partner):
         """Public Method
         Return a new instance of the Indiviual class, based on its gens end partner gens."""
@@ -379,6 +425,7 @@ class Individual(object):
             gen.validade()
         return new_ind
 
+    @logger.decorator
     def new_instace(self):
         """Public Method
         Returns a new instance of the object's class."""
@@ -389,11 +436,12 @@ class Simulation(object):
     """Public Class
     Simulation of the blarp"""
 
+    @logger.decorator
     def __init__(self, population = []):
         self.population = population
         self.ind_params = []
 
-    @log_dec
+    @logger.decorator
     def eliminate(self, list_selector = None, single_selector = None):
         """Public Method
         Sort population using the last value passad to this object's attribute sort_by_fitness.
@@ -413,7 +461,7 @@ class Simulation(object):
 
         return before-len(self.population)
 
-    @log_dec
+    @logger.decorator
     def sort_by_fitness(self, param = None):
 
         if param and not param in self.ind_params:
