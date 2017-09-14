@@ -7,7 +7,7 @@ class FuncFGen(RunnableGen):
         RunnableGen.__init__(self, req_gens = {'a' : self.get_gen, 'b' : self.get_gen})
 
     def run(self, param):
-        return self.individual.gens[self.names[0]].run(None) * param + self.individual.gens[self.names[0]].run(None)
+        return self.individual.gens[self.names[0]].run(None) * param + self.individual.gens[self.names[1]].run(None)
 
     def get_gen(self):
         return geneticPie.Default.FracGen({})   
