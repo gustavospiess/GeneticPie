@@ -7,7 +7,7 @@ class FuncFGen(RunnableGen):
         RunnableGen.__init__(self, req_gens = {'a' : self.get_gen, 'b' : self.get_gen})
 
     def run(self, param):
-        return self.individual.gens[self.names[0]].run(None) * param + self.individual.gens[self.names[0]].run(None)
+        return self.individual.gens[self.names[0]].run(None) * param + self.individual.gens[self.names[1]].run(None)
 
     def get_gen(self):
         return geneticPie.Default.FracGen({})   
@@ -54,7 +54,7 @@ for k in range(2000):
 print(pars)
 print()
 sim.sort_by_fitness(pars)
-for ind in sim.population20
+for ind in sim.population:
     print(str(ind.gens['a']) +'x+'  + str(ind.gens['b']))
     if (ind.calculate_fitness(pars)):
         print(' ( erro aproximado de', ind.calculate_fitness(pars), ')')

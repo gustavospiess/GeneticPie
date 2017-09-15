@@ -1,11 +1,25 @@
 import random
 import copy
 
+class GenBuffer(object):
+
+    def __init__(self, gen = None, new_instace = None, gen_class = None):
+        if  gen:
+            self.new_instace = gen.new_instace
+            self.gen_class = gen.__class__
+        elif new_instace and gen_class:
+            self.new_instace = new_instace
+            self.gen_class = gen_class
+
+
 class Gen(object):
 
     def __init__(self, mutation_list = [], validation_list = []):
         self.mutation_list = mutation_list
         self.validation_list = validation_list
+
+    def create_buffer(self):
+        return GenBuffer(gen = self)
 
     def all_subclass(self, lst, cls):
         for x in lst:
@@ -104,9 +118,9 @@ class Individual(object):
                         name in gens.keys() else True))
 
             adds = {}
-            for g in [g for g in gens.values() if issubclass(g.__class__, RunnableGen)]:
-                for gen_name, new_instace in g.req_gens.items():
-                    instance = new_instace()
+            for g in [g for g in gens.values() if issubclass(g.gen_class, RunnableGen)]:
+                for gen_name, gen_buffer in g.req_gens.items():
+                    instance = gen_buffer.new_instace()
                     instance_name = gen_name
                     i = 0
                     while is_to_contiue(instance, instance_name, gens, adds):
