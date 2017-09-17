@@ -10,6 +10,8 @@ class GenBuffer(object):
         elif new_instace and gen_class:
             self.new_instace = new_instace
             self.gen_class = gen_class
+        else:
+            raise ValueError("Tehere is not enough param")
 
 
 class Gen(object):
@@ -134,7 +136,11 @@ class Individual(object):
                         g.names[g.names.index(gen_name)] = instance_name
             return adds
 
-        self.gens = gens
+        self.gens = {}
+        for name, gen in gens.items():
+            if not issubclass(gen.__class__, GenBuffer):
+                raise TypeError('To initiate individual it must receive GenBuffer')
+            self.gens[name] = gen.new_instace()
         adds = None
         first = True
         while first or adds:
