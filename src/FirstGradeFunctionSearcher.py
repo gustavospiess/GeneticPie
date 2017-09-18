@@ -8,16 +8,17 @@ class FuncFGen(RunnableGen):
         RunnableGen.__init__(self, req_gens = {'a' : buff, 'b' : buff})
 
     def run(self, param):
-        return self.individual.gens[self.names[0]].run(None) * param + self.individual.gens[self.names[1]].run(None)
+        a = self.individual.gens[self.names[0]]
+        b = self.individual.gens[self.names[1]]
+        return a.run(None) * param + b.run(None)
 
     def get_gen(self):
-        return geneticPie.Default.FracGen({})   
+        return geneticPie.Default.FracGen({})  
 
 class FuncFInd(Individual):
 
     def __init__(self, gens):
-        buf = GenBuffer(new_instace = FuncFGen, gen_class = FuncFGen.__class__)
-        Individual.__init__(self, {'main': buf, **gens})
+        Individual.__init__(self, {'main': FuncFGen(), **gens})
 
     def calculate_fitness(self, param):
         total = 0
@@ -43,9 +44,7 @@ sim.population.append(FuncFInd({}))
 for i in range(19):
     sim.population.append(sim.population[0].new_instace())
 
-print(sim.population[0].gens)
-
-for k in range(20):
+for k in range(250):
     sim.sort_by_fitness(pars)
     if not sim.population[0].calculate_fitness(pars):
         print(k)

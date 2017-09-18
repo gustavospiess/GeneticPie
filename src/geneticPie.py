@@ -57,9 +57,6 @@ class Gen(object):
     def new_instace(self):
         return copy.deepcopy(self)
 
-    def __str__(self):
-        return str(self.value);
-
 class Mutation(object):
 
     def __init__(self, mutate = None):
@@ -89,6 +86,9 @@ class ValuableGen(Gen):
         @value.setter
         def value(self, v): self.__value = v
 
+    def __str__(self):
+        return str(self.value);
+
 class RunnableGen(Gen):
 
     def __init__(self, names = [], individual = None, req_gens = {},mutation_list = [], validation_list = []):
@@ -110,47 +110,28 @@ class RunnableGen(Gen):
         raise NotImplementedError()
 
 class Individual(object):
-
-    def __init__(self, gens):
-
-        def select_adds(self, gens):
-            def is_to_contiue(instance, name, gens, adds):
-                return ((instance not in self.gens.values() and instance not in adds.values()) 
-                    and (not issubclass(instance.__class__, gens[name].__class__) if 
-                        name in gens.keys() else True))
-
-            adds = {}
-            for g in [g for g in gens.values() if issubclass(g.gen_class, RunnableGen)]:
-                for gen_name, gen_buffer in g.req_gens.items():
-                    instance = gen_buffer.new_instace()
-                    instance_name = gen_name
+    
+    def __init__(self, base_gen_dict):
+        self.gens = base_gen_dict
+        requier_list = [requier for requier in base_gen_dict.values()]
+        while requier_list:
+            requier = requier_list.pop(-1)
+            if not issubclass(requier.__class__, RunnableGen): continue
+            requier.individual = self
+            req_dict = requier.req_gens
+            for name, buf in req_dict.items():
+                new_name = name
+                if name in self.gens:
+                    if issubclass(buf.gen_class, self.gens[name].__class__):continue
                     i = 0
-                    while is_to_contiue(instance, instance_name, gens, adds):
-                        instance_name = gen_name + ("_"+str(i) if i else "")
-                        if (not instance_name in self.gens.keys() or
-                            issubclass(self.gens[instance_name].__class__, instance.__class__)):
-                            adds[instance_name] = instance
-                        i += 1
-                    if instance_name != gen_name:
-                        g.req_gens[instance_name] = g.req_gens.pop(gen_name)
-                        g.names[g.names.index(gen_name)] = instance_name
-            return adds
-
-        self.gens = {}
-        for name, gen in gens.items():
-            if not issubclass(gen.__class__, GenBuffer):
-                raise TypeError('To initiate individual it must receive GenBuffer')
-            self.gens[name] = gen.new_instace()
-        adds = None
-        first = True
-        while first or adds:
-            first = False
-            adds = select_adds(self, gens)
-            self.gens = {**self.gens, **adds}
-            gens = adds
-
-        for w in(x for x in self.gens.values() if issubclass(x.__class__, RunnableGen)):
-            w.individual = self
+                    new_name = name+'_'+str(i)
+                    while new_name in self.gens: name+'_'+str(i)
+                    if name != new_name:
+                        requier.req_gens[name] = requier.req_gens.pop(name)
+                        requier.names[requier.names.index(name)] = new_name
+                instance = buf.new_instace()
+                requier_list.append(instance)
+                self.gens[new_name] = instance
 
     def calculate_fitness(self, param):
         raise NotImplementedError()
@@ -160,7 +141,15 @@ class Individual(object):
             raise TypeError("partner must be an Individual")
 
         gen_name_list = [*self.gens.keys(), *partner.gens.keys()]
-        gen_dict = { name : random.choice((self.gens[name], self.gens[name])) for name in gen_name_list}
+        gen_dict = {}
+        for gen_name in gen_name_list:
+            if gen_name not in self.gens:
+                gen_dict[gen_name] = partner.gens[gen_name]
+            elif gen_name not in partner.gens:
+                gen_dict[gen_name] = self.gens[gen_name]
+            else:
+                random.choice((self.gens[gen_name], partner.gens[gen_name]))
+
         new_ind = self.__class__({k : v.new_instace() for k,v in gen_dict.items()})
         for gen in new_ind.gens.values():
             gen.mutate()
@@ -197,7 +186,7 @@ class Simulation(object):
         if param and not param in self.ind_params:
             self.ind_params.append(param)
 
-        def key(ind):   return ind.calculate_fitness(self.ind_params[-1])
+        def key(ind): return ind.calculate_fitness(self.ind_params[-1])
 
         self.population.sort(key = key)
         return self
@@ -324,8 +313,8 @@ class Default():
             if names or len(names) != 2: 
                 names = [str(random.randint(0,99)) + 'd' + str(x+1) for x in range(2)]
 
-            r1 = self.get_gen(validation_list =  Default.Val.not_null_list, value = 1)
-            r2 = self.get_gen(value = 1)
+            r1 = GenBuffer(gen_class = Default.IntGen ,new_instace = self.get_gen(validation_list =  Default.Val.not_null_list, value = 1))
+            r2 = GenBuffer(gen_class = Default.IntGen ,new_instace = self.get_gen(value = 1))
 
             RunnableGen.__init__(self, 
                 req_gens = {names[0]:r2, names[1]:r1},
@@ -333,7 +322,9 @@ class Default():
                     names = names, individual = individual, mutation_list = mutation_list)
 
         def run(self, param):
-            return self.individual.gens[self.names[0]].value/self.individual.gens[self.names[1]].value
+            up = self.individual.gens[self.names[0]].value
+            down = self.individual.gens[self.names[1]].value
+            return up/down
 
         def get_gen(self, **param):
             def get():
