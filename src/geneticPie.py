@@ -1,5 +1,7 @@
 import random
 import copy
+import json
+from time import asctime
 
 class GenBuffer(object):
 
@@ -12,6 +14,54 @@ class GenBuffer(object):
             self.gen_class = gen_class
         else:
             raise ValueError("Tehere is not enough param")
+
+
+debug = False
+
+class Logger(object):
+
+    def __init__(self, print_log = False, list_log = False):
+        if list_log:
+            self.logs = []
+
+        self.config = {
+            'print_log' : print_log,
+            'list_log' : list_log
+        }
+
+        def p_log(log): print(log)
+        def l_log(log): self.logs.append(log)
+
+        self.methods = {
+            'print_log' : p_log,
+            'list_log' : l_log
+        }
+
+        self.on = len([x for x in self.config.keys() if self.config[x]]) > 0
+
+        def dec(old_method):
+            if not self.on:
+                return old_method
+            def new_method(*param, **key_param):
+                log = {'input' : str(param) + str(key_param),
+                        'start_time' : str(asctime()),
+                        'method' : old_method.__name__}
+                output = old_method(*param, **key_param)
+                log['output'] = output
+                log['end_time'] = str(asctime())
+                self.log(log)
+
+                return output
+            return new_method
+
+        self.decorator = dec
+
+    def log(self, log): 
+        for method in self.config.keys():
+            if self.config[method]:
+                self.methods[method](log)
+
+logger = Logger(list_log = debug)
 
 
 class Gen(object):
@@ -181,6 +231,7 @@ class Individual(object):
         Must be overrided."""
         raise NotImplementedError()
 
+    @logger.decorator
     def crossover(self, partner):
         """Public Method
         Return a new instance of the Indiviual class, based on its gens end partner gens."""
@@ -220,6 +271,7 @@ class Simulation(object):
 
         self.ind_params = []
 
+    @logger.decorator
     def eliminate(self, list_selector = None, single_selector = None):
         """Public Method
         Sort population using the last value passad to this object's attribute sort_by_fitness.
