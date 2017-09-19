@@ -2,6 +2,7 @@ import random
 import copy
 import json
 from time import asctime
+from abc import ABCMeta, abstractmethod
 
 class GenBuffer(object):
 
@@ -109,8 +110,9 @@ class Gen(object):
         If there is not any Mutation avaliable, nothing happens."""
         if self.mutation_list and not random.randint(0,4):
             random.choice(self.mutation_list).mutate(self)
+        self.validate()
 
-    def validade(self):
+    def validate(self):
         """Public Method
         Execute every Validation in validation_list."""
         for val in self.validation_list:
@@ -172,7 +174,7 @@ class ValuableGen(Gen):
     def __str__(self):
         return str(self.value);
 
-class RunnableGen(Gen):
+class RunnableGen(Gen, metaclass = ABCMeta):
     """Public Class
     Gen that implements an run method."""
 
@@ -193,12 +195,13 @@ class RunnableGen(Gen):
                 raise TypeError('values in req_gens must extend Gen')
             self._req_gens = rg
 
+    @abstractmethod
     def run(self, param):
         """Public Method Execute some task, returnnig or not.
         Must be overrided."""
         raise NotImplementedError()
 
-class Individual(object):
+class Individual(object, metaclass = ABCMeta):
     """Public Class
     Representation of an possible response."""
     
@@ -251,13 +254,15 @@ class Individual(object):
         new_ind = self.__class__({k : v.new_instace() for k,v in gen_dict.items()})
         for gen in new_ind.gens.values():
             gen.mutate()
-            gen.validade()
         return new_ind
 
     def new_instace(self):
         """Public Method
         Returns a new instance of the object's class."""
         return copy.deepcopy(self)
+
+    @abstractmethod
+    def calculate_fitness(self, param): NotImplementedError()
 
 class Simulation(object):
     """Public Class
@@ -300,146 +305,168 @@ class Simulation(object):
         self.population.sort(key = key)
         return self
 
-class Default():
+class Default(object):
     """Public Static Class.
     Default owns Default Gen, Mutation and Validation implementations."""
 
-    class Mut():
-        """Private Class"""
-        def add_1(gen):
-            gen.value += 1
-        def add_10(gen):
-            gen.value += 10 
-        def add_100(gen):
-            gen.value += 100
-        def sub_1(gen):
-            gen.value -= 1
-        def sub_10(gen):
-            gen.value -= 10
-        def sub_100(gen):
-            gen.value -= 100
-        def mul_1(gen):
-            gen.value *= 1
-        def mul_10(gen):
-            gen.value *= 10
-        def mul_100(gen):
-            gen.value *= 100
-        def div_1(gen):
-            gen.value /= 1
-        def div_10(gen):
-            gen.value /= 10
-        def div_100(gen):
-            gen.value /= 100
-        def add_05(gen):
-            gen.value += 0.5
-        def add_01(gen):
-            gen.value += 0.1
-        def add_001(gen):
-            gen.value += 0.01
-        def sub_05(gen):
-            gen.value -= 0.5
-        def sub_01(gen):
-            gen.value -= 0.1
-        def sub_001(gen):
-            gen.value -= 0.01
-        def mod_001(gen):
-            gen.value = gen.value - gen.value%0.01
-        def mod_01(gen):
-            gen.value = gen.value - gen.value%0.1
-        def mod_1(gen):
-            gen.value = gen.value - gen.value%1
-        def mod_10(gen):
-            gen.value = gen.value - gen.value%10
-        def mod_100(gen):
-            gen.value = gen.value - gen.value%100
+    class Mut(Mutation):
 
-        int_list = [Mutation(mutate = add_1),
-            Mutation(mutate = sub_1),
-            Mutation(mutate = mul_1),
-            Mutation(mutate = add_10),
-            Mutation(mutate = sub_10),
-            Mutation(mutate = mul_10),
-            Mutation(mutate = add_100),
-            Mutation(mutate = sub_100),
-            Mutation(mutate = mul_100),
-            Mutation(mutate = mod_10),
-            Mutation(mutate = mod_100)]
+        def __init__(self, mutate_method):
+            self.mutate_method = mutate_method
 
-        float_list =[*int_list,
-            Mutation(mutate = div_1),
-            Mutation(mutate = div_10),
-            Mutation(mutate = div_100),
-            Mutation(mutate = add_05),
-            Mutation(mutate = add_01),
-            Mutation(mutate = add_001),
-            Mutation(mutate = sub_05),
-            Mutation(mutate = sub_01),
-            Mutation(mutate = sub_001),
-            Mutation(mutate = mod_1)]
+        def mutate(self, gen):
+            self.mutate_method(gen)
 
-    class Val():
-        """Private Class"""
-        def not_null(gen):
-            if not gen.value:
-                gen.value = 1 
+        @classmethod
+        def int_list(cls):       
+            def add_1(gen):
+                gen.value += 1
+            def add_10(gen):
+                gen.value += 10 
+            def add_100(gen):
+                gen.value += 100
+            def sub_1(gen):
+                gen.value -= 1
+            def sub_10(gen):
+                gen.value -= 10
+            def sub_100(gen):
+                gen.value -= 100
+            def mul_1(gen):
+                gen.value *= 1
+            def mul_10(gen):
+                gen.value *= 10
+            def mul_100(gen):
+                gen.value *= 100
+            def mod_001(gen):
+                gen.value = gen.value - gen.value%0.01
+            def mod_01(gen):
+                gen.value = gen.value - gen.value%0.1
+            def mod_1(gen):
+                gen.value = gen.value - gen.value%1
+            def mod_10(gen):
+                gen.value = gen.value - gen.value%10
+            def mod_100(gen):
+                gen.value = gen.value - gen.value%100
 
-        def simplify_frac(gen):
-            d1 = gen.individual.gens[gen.names[0]]
-            d2 = gen.individual.gens[gen.names[1]]
+            return [cls(add_1),
+                    cls(sub_1),
+                    cls(mul_1),
+                    cls(add_10),
+                    cls(sub_10),
+                    cls(mul_10),
+                    cls(add_100),
+                    cls(sub_100),
+                    cls(mul_100),
+                    cls(mod_1),
+                    cls(mod_10),
+                    cls(mod_100)]
 
-            primes = [2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 
-                53, 59, 61, 67, 71, 73, 79, 83, 89, 97]
+        #@property
+        @classmethod
+        def float_list(cls):
+            def div_1(gen):
+                gen.value /= 1
+            def div_10(gen):
+                gen.value /= 10
+            def div_100(gen):
+                gen.value /= 100
+            def add_05(gen):
+                gen.value += 0.5
+            def add_01(gen):
+                gen.value += 0.1
+            def add_001(gen):
+                gen.value += 0.01
+            def sub_05(gen):
+                gen.value -= 0.5
+            def sub_01(gen):
+                gen.value -= 0.1
+            def sub_001(gen):
+                gen.value -= 0.01
 
-            for p in primes:
-                while True:
-                    if not (d1.value%p) and not (d2.value%p):
-                        d1.value /= p
-                        d2.value /= p
-                        continue
-                    break
+            return [*cls.int_list(),
+                    cls(div_1),
+                    cls(div_10),
+                    cls(div_100),
+                    cls(add_05),
+                    cls(add_01),
+                    cls(add_001),
+                    cls(sub_05),
+                    cls(sub_01),
+                    cls(sub_001)]
 
-            if d2.value < 0:
-                d2.value *= -1
-                d1.value *= -1
+    class Val(Validation):
 
-            d1.value = int(d1.value)
-            d2.value = int(d2.value)
+        def __init__(self, validate_method):
+            self.validate_method = validate_method
 
-        not_null_list = [Validation(validate = not_null)]
-        simplify_frac_list = [Validation(validate = simplify_frac)]
+        def validate(self, gen):
+            self.validate_method(gen)
 
-    int_mut_list = Mut().int_list
-    float_mut_list = Mut().float_list
+        #@property
+        @classmethod
+        def not_null_list(cls):       
+            def not_null(gen):
+                if gen.value == 0:
+                    gen.value = 1 
+            return [cls(not_null)]
+
+        #@property
+        @classmethod
+        def simplify_frac_list(cls):
+            def simplify_frac(gen):
+                d1 = gen.individual.gens[gen.names[0]]
+                d2 = gen.individual.gens[gen.names[1]]
+
+                primes = [2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 
+                    53, 59, 61, 67, 71, 73, 79, 83, 89, 97]
+
+                for p in primes:
+                    while True:
+                        if not (d1.value%p) and not (d2.value%p):
+                            d1.value /= p
+                            d2.value /= p
+                            continue
+                        break
+
+                if d2.value < 0:
+                    d2.value *= -1
+                    d1.value *= -1
+
+                d1.value = int(d1.value)
+                d2.value = int(d2.value)
+            return [cls(simplify_frac)]
+
+    float_mut_list = Mut.float_list()
+    int_mut_list = Mut.int_list()
+
+    simplify_frac_val_list = Val.simplify_frac_list()
+    not_null_val_list = Val.not_null_list()
 
     class IntGen(ValuableGen):
         """Public Class
         IntGen represents an integer value."""
-        def __init__(self, mutation_list = None, value = 0, validation_list = []):
-            if not mutation_list: mutation_list = Default.int_mut_list
-            ValuableGen.__init__(self, mutation_list = mutation_list, value = value, validation_list = validation_list) 
+        def __init__(self, value = 0, validation_list = []):
+            ValuableGen.__init__(self, mutation_list = Default.int_mut_list, value = value, validation_list = validation_list) 
 
     class FltGen(ValuableGen):
         """Public Class
         FltGen represents an float value."""
-        def __init__(self, mutation_list = None, value = 0, validation_list = []):
-            if not mutation_list: mutation_list = Default.float_list
-            ValuableGen.__init__(self, mutation_list = mutation_list, value = value, validation_list = validation_list) 
+        def __init__(self, value = 0, validation_list = []):
+            ValuableGen.__init__(self, mutation_list = Default.float_mut_list, value = value, validation_list = validation_list) 
             
     class FracGen(RunnableGen):
         """Public Class
         FracGen represents an float value get by the division of two integers."""
-        def __init__(self, names = [], individual = None, req_gens = {},mutation_list = [], validation_list = []):
+        def __init__(self, names = [], individual = None, req_gens = {}, mutation_list = []):
             if names or len(names) != 2: 
-                names = [str(random.randint(0,99)) + 'd' + str(x+1) for x in range(2)]
+                names = [str(random.randint(0,99)) + 'd' + str(x) for x in range(2)]
 
-            r1 = GenBuffer(gen_class = Default.IntGen,
-                new_instace = self.get_gen(validation_list = Default.Val.not_null_list, value = 1))
-            r2 = GenBuffer(gen_class = Default.IntGen, 
-                new_instace = self.get_gen(value = 1))
+            down = self.get_gen_buf(validation_list =  Default.not_null_val_list, value = 1)
+            up = self.get_gen_buf(value = 1)
 
             RunnableGen.__init__(self, 
-                req_gens = {names[0]:r2, names[1]:r1},
-                    validation_list = Default.Val.simplify_frac_list,
+                req_gens = {names[0]:up, names[1]:down},
+                    validation_list = Default.simplify_frac_val_list,
                     names = names, individual = individual, mutation_list = mutation_list)
 
         def run(self, param):
@@ -447,13 +474,13 @@ class Default():
             down = self.individual.gens[self.names[1]].value
             return up/down
 
-        def get_gen(self, **param):
+        def get_gen_buf(self, **param):
             def get():
                 return Default.IntGen(**param)
-            return get
+            return GenBuffer(new_instace = get, gen_class = Default.IntGen)
 
         def __str__(self):
-            self.validade()
+            self.validate()
             up = self.individual.gens[self.names[0]].value
             down = self.individual.gens[self.names[1]].value            
             return (str(up) + ('/' + str(down) if (down - 1) else ''))
