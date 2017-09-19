@@ -121,7 +121,7 @@ class Gen(object):
     def new_instace(self):
         return copy.deepcopy(self)
 
-class Mutation(object):
+class Mutation(object, metaclass = ABCMeta):
     """Public Class
     Executable Mutation for a Gen, must recieve the method 'mutate' to execute when initiated
     Mutate recieve self and the gen, it must change a something in gen, in order to change its value"""
@@ -131,18 +131,20 @@ class Mutation(object):
         Initiate Mutation with mutate param"""
         self.mutate = mutate if mutate else param['mutate']
 
+    @abstractmethod
     def mutate(self, gen):
         """Public Method
         change something in Gen in order to change its value.
         Must be overrided."""
         raise NotImplementedError()
 
-class Validation(object):
+class Validation(object, metaclass = ABCMeta):
     """Public Class
     Executable Validation for a Gen, must recieve the method 'validate' to execute when initiated.
     validate recieve self and the Gen, it must change a something in Gen,
     in order to make it have a valid value."""
     
+    @abstractmethod
     def __init__(self, validate = None):
         """Public method
         Initiate Validation with validate param"""
