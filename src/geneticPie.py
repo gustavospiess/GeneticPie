@@ -1,8 +1,7 @@
-import random
-import copy
-import json
-from time import asctime
-from abc import ABCMeta, abstractmethod
+from abc    import ABCMeta, abstractmethod
+from copy   import deepcopy
+from random import randint, choice
+from time   import asctime
 
 class GenBuffer(object):
     """Public Class 
@@ -120,8 +119,8 @@ class Gen(object):
         If there is something in mutation list, execute self.validate
         and in on in eatch five times, takes one of mutation_list (randomly) and execute it.
         If there is not any Mutation avaliable, nothing happens."""
-        if self.mutation_list and not random.randint(0,4):
-            random.choice(self.mutation_list).mutate(self)
+        if self.mutation_list and not randint(0,4):
+            choice(self.mutation_list).mutate(self)
         self.validate()
 
     def validate(self):
@@ -131,7 +130,7 @@ class Gen(object):
             val.validate(self)
 
     def new_instace(self):
-        return copy.deepcopy(self)
+        return deepcopy(self)
 
 class Mutation(object, metaclass = ABCMeta):
     """Public Class
@@ -254,7 +253,7 @@ class Individual(object, metaclass = ABCMeta):
             elif gen_name not in partner.gens:
                 gen_dict[gen_name] = self.gens[gen_name]
             else:
-                random.choice((self.gens[gen_name], partner.gens[gen_name]))
+                choice((self.gens[gen_name], partner.gens[gen_name]))
 
         new_ind = self.__class__({k : v.new_instace() for k,v in gen_dict.items()})
         for gen in new_ind.gens.values():
@@ -264,7 +263,7 @@ class Individual(object, metaclass = ABCMeta):
     def new_instace(self):
         """Public Method
         Returns a new instance of the object's class."""
-        return copy.deepcopy(self)
+        return deepcopy(self)
 
     @abstractmethod
     def calculate_fitness(self, param):
@@ -469,7 +468,7 @@ class Default(object):
         FracGen represents an float value get by the division of two integers."""
         def __init__(self, names = [], individual = None, req_gens = {}, mutation_list = []):
             if names or len(names) != 2: 
-                names = [str(random.randint(0,99)) + 'd' + str(x) for x in range(2)]
+                names = [str(randint(0,99)) + 'd' + str(x) for x in range(2)]
 
             down = self.get_gen_buf(validation_list =  Default.not_null_val_list, value = 1)
             up = self.get_gen_buf(value = 1)
