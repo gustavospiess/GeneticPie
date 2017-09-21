@@ -3,31 +3,7 @@ from copy   import deepcopy
 from random import randint, choice
 from time   import asctime
 
-class GenBuffer(object):
-    """Public Class 
-    Represents an possible instance of gen, for individual instence contruction.
-    In this prosses exists the possibility of not needing to instance every gen that are required.
-    GenBuffer has the attributes new_instance, as callable, and gen_class, as the class of the gen.
-    new_instance must be an callable, with no paramether, that returns an new instance of gen_class"""
-
-    def __init__(self, new_instace = None, gen_class = None):
-        """Public method
-        Initiate Gen buffer with new_instance and gen_class as paramether.
-        If either new_instance or gen_class aren't passed, raise ValueError."""
-        if new_instace and gen_class:
-            self.new_instace = new_instace
-            self.gen_class = gen_class
-        else:
-            raise ValueError('Tehere is not enough param')
-
-    @classmethod
-    def factory_from_gen(cls, gen = None):
-        """Public class method
-        instance an GenBuffer from an Gen instance, takeing its __class__ and new_instance"""
-        if not gen or not issubclass(gen.__class__, Gen):
-            raise ValueError('gen is not defined or doesn\'t extends Gen')
-        return cls(new_instace = gen.new_instace, gen_class = gen.__class__)
-
+#Global configurations
 debug = False
 
 class Logger(object):
@@ -74,6 +50,31 @@ class Logger(object):
                 self.methods[method](log)
 
 logger = Logger(list_log = debug)
+
+class GenBuffer(object):
+    """Public Class 
+    Represents an possible instance of gen, for individual instence contruction.
+    In this prosses exists the possibility of not needing to instance every gen that are required.
+    GenBuffer has the attributes new_instance, as callable, and gen_class, as the class of the gen.
+    new_instance must be an callable, with no paramether, that returns an new instance of gen_class"""
+
+    def __init__(self, new_instace = None, gen_class = None):
+        """Public method
+        Initiate Gen buffer with new_instance and gen_class as paramether.
+        If either new_instance or gen_class aren't passed, raise ValueError."""
+        if new_instace and gen_class:
+            self.new_instace = new_instace
+            self.gen_class = gen_class
+        else:
+            raise ValueError('Tehere is not enough param')
+
+    @classmethod
+    def factory_from_gen(cls, gen = None):
+        """Public class method
+        instance an GenBuffer from an Gen instance, takeing its __class__ and new_instance"""
+        if not gen or not issubclass(gen.__class__, Gen):
+            raise ValueError('gen is not defined or doesn\'t extends Gen')
+        return cls(new_instace = gen.new_instace, gen_class = gen.__class__)
 
 
 class Gen(object):
