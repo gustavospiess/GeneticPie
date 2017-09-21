@@ -5,17 +5,29 @@ from time import asctime
 from abc import ABCMeta, abstractmethod
 
 class GenBuffer(object):
+    """Public Class 
+    Represents an possible instance of gen, for individual instence contruction.
+    In this prosses exists the possibility of not needing to instance every gen that are required.
+    GenBuffer has the attributes new_instance, as callable, and gen_class, as the class of the gen.
+    new_instance must be an callable, with no paramether, that returns an new instance of gen_class"""
 
-    def __init__(self, gen = None, new_instace = None, gen_class = None):
-        if  gen:
-            self.new_instace = gen.new_instace
-            self.gen_class = gen.__class__
-        elif new_instace and gen_class:
+    def __init__(self, new_instace = None, gen_class = None):
+        """Public method
+        Initiate Gen buffer with new_instance and gen_class as paramether.
+        If either new_instance or gen_class aren't passed, raise ValueError."""
+        if new_instace and gen_class:
             self.new_instace = new_instace
             self.gen_class = gen_class
         else:
-            raise ValueError("Tehere is not enough param")
+            raise ValueError('Tehere is not enough param')
 
+    @classmethod
+    def factory_from_gen(cls, gen = None):
+        """Public class method
+        instance an GenBuffer from an Gen instance, takeing its __class__ and new_instance"""
+        if not gen or not issubclass(gen.__class__, Gen):
+            raise ValueError('gen is not defined or doesn\'t extends Gen')
+        return cls(new_instace = gen.new_instace, gen_class = gen.__class__)
 
 debug = False
 
@@ -76,7 +88,7 @@ class Gen(object):
         self.validation_list = validation_list
 
     def create_buffer(self):
-        return GenBuffer(gen = self)
+        return GenBuffer.factory_from_gen(gen = self)
 
     def all_subclass(self, lst, cls):
         """Protected method
@@ -156,8 +168,6 @@ class Validation(object, metaclass = ABCMeta):
         Must be overrided."""
         raise NotImplementedError()
 
-
-
 class ValuableGen(Gen):
     """Public Class
     Gen that has a value."""    
@@ -229,13 +239,6 @@ class Individual(object, metaclass = ABCMeta):
                 requier_list.append(instance)
                 self.gens[new_name] = instance
 
-    def calculate_fitness(self, param):
-        """Public Method
-        Calculate and return an numerical indicator of Individual addaptability.
-        Zero is te perfect response, representing that the individual is the most optimizated response.
-        Must be overrided."""
-        raise NotImplementedError()
-
     @logger.decorator
     def crossover(self, partner):
         """Public Method
@@ -264,7 +267,12 @@ class Individual(object, metaclass = ABCMeta):
         return copy.deepcopy(self)
 
     @abstractmethod
-    def calculate_fitness(self, param): NotImplementedError()
+    def calculate_fitness(self, param):
+        """Public Method
+        Calculate and return an numerical indicator of Individual addaptability.
+        Zero is te perfect response, representing that the individual is the most optimizated response.
+        Must be overrided."""
+        NotImplementedError()
 
 class Simulation(object):
     """Public Class
