@@ -1,10 +1,9 @@
-import geneticPie
 from geneticPie import *
 
 class FuncFGen(RunnableGen):
 
     def __init__(self):
-        buff = GenBuffer(new_instace = self.get_gen, gen_class = geneticPie.Default.FracGen.__class__)
+        buff = GenBuffer(new_instace = self.get_gen, gen_class = Default.FracGen.__class__)
         RunnableGen.__init__(self, req_gens = {'a' : buff, 'b' : buff})
 
     def run(self, param):
@@ -13,7 +12,7 @@ class FuncFGen(RunnableGen):
         return a.run(None) * param + b.run(None)
 
     def get_gen(self):
-        return geneticPie.Default.FracGen({})  
+        return Default.FracGen({})  
 
 class FuncFInd(Individual):
 

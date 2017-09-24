@@ -1,22 +1,9 @@
-import random
-import copy
-import json
-from time import asctime
-from abc import ABCMeta, abstractmethod
+from abc    import ABCMeta, abstractmethod
+from copy   import deepcopy
+from random import randint, choice
+from time   import asctime
 
-class GenBuffer(object):
-
-    def __init__(self, gen = None, new_instace = None, gen_class = None):
-        if  gen:
-            self.new_instace = gen.new_instace
-            self.gen_class = gen.__class__
-        elif new_instace and gen_class:
-            self.new_instace = new_instace
-            self.gen_class = gen_class
-        else:
-            raise ValueError("Tehere is not enough param")
-
-
+#Global configurations
 debug = False
 
 class Logger(object):
@@ -64,6 +51,31 @@ class Logger(object):
 
 logger = Logger(list_log = debug)
 
+class GenBuffer(object):
+    """Public Class 
+    Represents an possible instance of gen, for individual instence contruction.
+    In this prosses exists the possibility of not needing to instance every gen that are required.
+    GenBuffer has the attributes new_instance, as callable, and gen_class, as the class of the gen.
+    new_instance must be an callable, with no paramether, that returns an new instance of gen_class"""
+
+    def __init__(self, new_instace = None, gen_class = None):
+        """Public method
+        Initiate Gen buffer with new_instance and gen_class as paramether.
+        If either new_instance or gen_class aren't passed, raise ValueError."""
+        if new_instace and gen_class:
+            self.new_instace = new_instace
+            self.gen_class = gen_class
+        else:
+            raise ValueError('Tehere is not enough param')
+
+    @classmethod
+    def factory_from_gen(cls, gen = None):
+        """Public class method
+        instance an GenBuffer from an Gen instance, takeing its __class__ and new_instance"""
+        if not gen or not issubclass(gen.__class__, Gen):
+            raise ValueError('gen is not defined or doesn\'t extends Gen')
+        return cls(new_instace = gen.new_instace, gen_class = gen.__class__)
+
 
 class Gen(object):
     """Public Class
@@ -76,7 +88,7 @@ class Gen(object):
         self.validation_list = validation_list
 
     def create_buffer(self):
-        return GenBuffer(gen = self)
+        return GenBuffer.factory_from_gen(gen = self)
 
     def all_subclass(self, lst, cls):
         """Protected method
@@ -108,8 +120,8 @@ class Gen(object):
         If there is something in mutation list, execute self.validate
         and in on in eatch five times, takes one of mutation_list (randomly) and execute it.
         If there is not any Mutation avaliable, nothing happens."""
-        if self.mutation_list and not random.randint(0,4):
-            random.choice(self.mutation_list).mutate(self)
+        if self.mutation_list and not randint(0,4):
+            choice(self.mutation_list).mutate(self)
         self.validate()
 
     def validate(self):
@@ -119,7 +131,7 @@ class Gen(object):
             val.validate(self)
 
     def new_instace(self):
-        return copy.deepcopy(self)
+        return deepcopy(self)
 
 class Mutation(object, metaclass = ABCMeta):
     """Public Class
@@ -155,8 +167,6 @@ class Validation(object, metaclass = ABCMeta):
         validate gen in order to make it have an valid value.
         Must be overrided."""
         raise NotImplementedError()
-
-
 
 class ValuableGen(Gen):
     """Public Class
@@ -229,13 +239,6 @@ class Individual(object, metaclass = ABCMeta):
                 requier_list.append(instance)
                 self.gens[new_name] = instance
 
-    def calculate_fitness(self, param):
-        """Public Method
-        Calculate and return an numerical indicator of Individual addaptability.
-        Zero is te perfect response, representing that the individual is the most optimizated response.
-        Must be overrided."""
-        raise NotImplementedError()
-
     @logger.decorator
     def crossover(self, partner):
         """Public Method
@@ -251,7 +254,7 @@ class Individual(object, metaclass = ABCMeta):
             elif gen_name not in partner.gens:
                 gen_dict[gen_name] = self.gens[gen_name]
             else:
-                random.choice((self.gens[gen_name], partner.gens[gen_name]))
+                choice((self.gens[gen_name], partner.gens[gen_name]))
 
         new_ind = self.__class__({k : v.new_instace() for k,v in gen_dict.items()})
         for gen in new_ind.gens.values():
@@ -261,10 +264,15 @@ class Individual(object, metaclass = ABCMeta):
     def new_instace(self):
         """Public Method
         Returns a new instance of the object's class."""
-        return copy.deepcopy(self)
+        return deepcopy(self)
 
     @abstractmethod
-    def calculate_fitness(self, param): NotImplementedError()
+    def calculate_fitness(self, param):
+        """Public Method
+        Calculate and return an numerical indicator of Individual addaptability.
+        Zero is te perfect response, representing that the individual is the most optimizated response.
+        Must be overrided."""
+        NotImplementedError()
 
 class Simulation(object):
     """Public Class
@@ -461,7 +469,7 @@ class Default(object):
         FracGen represents an float value get by the division of two integers."""
         def __init__(self, names = [], individual = None, req_gens = {}, mutation_list = []):
             if names or len(names) != 2: 
-                names = [str(random.randint(0,99)) + 'd' + str(x) for x in range(2)]
+                names = [str(randint(0,99)) + 'd' + str(x) for x in range(2)]
 
             down = self.get_gen_buf(validation_list =  Default.not_null_val_list, value = 1)
             up = self.get_gen_buf(value = 1)
