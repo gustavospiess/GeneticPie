@@ -1,23 +1,25 @@
 from geneticPie import *
+import random
 
-class FuncFGen(RunnableGen):
+class FuncFGen(RunnableGen, RequierGen):
 
     def __init__(self):
-        buff = GenBuffer(new_instace = self.get_gen, gen_class = Default.FracGen.__class__)
-        RunnableGen.__init__(self, req_gens = {'a' : buff, 'b' : buff})
+        buff = GenBuffer(gen_class = Default.FracGen)
+        self.req_gens = {'a' : buff, 'b' : buff}
 
-    def run(self, param):
-        a = self.individual.gens[self.names[0]]
-        b = self.individual.gens[self.names[1]]
-        return a.run(None) * param + b.run(None)
+    def run(self, param):        
+        a = self.individual.gens[self.names[0]].run()
+        b = self.individual.gens[self.names[1]].run()
+        return a * param + b
 
     def get_gen(self):
-        return Default.FracGen({})  
+        return   
 
 class FuncFInd(Individual):
 
-    def __init__(self, gens):
-        Individual.__init__(self, {'main': FuncFGen(), **gens})
+    def __init__(self, gens = None):
+        a = gens if gens else {'main': FuncFGen()}
+        Individual.__init__(self, a)
 
     def calculate_fitness(self, param):
         total = 0
@@ -38,7 +40,7 @@ def rpoint():
     return(rint(), rint())
 pars = [rpoint(), rpoint()]
 sim = Simulation()
-sim.population.append(FuncFInd({}))
+sim.population.append(FuncFInd())
 
 for i in range(19):
     sim.population.append(sim.population[0].new_instace())
@@ -46,7 +48,6 @@ for i in range(19):
 for k in range(250):
     sim.sort_by_fitness(pars)
     if not sim.population[0].calculate_fitness(pars):
-        print(k)
         break
     for k in range(sim.eliminate()):
         pair = random.sample(sim.population, 2)

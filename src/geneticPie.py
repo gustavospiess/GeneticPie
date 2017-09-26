@@ -3,6 +3,8 @@ from copy   import deepcopy
 from random import randint, choice
 from time   import asctime
 
+import traceback
+
 #Global configurations
 debug = False
 
@@ -30,11 +32,11 @@ class Logger(object):
         def dec(old_method):
             if not self.on:
                 return old_method
-            def new_method(*param, **key_param):
-                log = {'input' : str(param) + str(key_param),
+            def new_method(*args, **k_args):
+                log = {'input' : str(args) + str(k_args),
                         'start_time' : str(asctime()),
                         'method' : old_method.__name__}
-                output = old_method(*param, **key_param)
+                output = old_method(*args, **k_args)
                 log['output'] = output
                 log['end_time'] = str(asctime())
                 self.log(log)
@@ -62,8 +64,8 @@ class GenBuffer(object):
         """Public method
         Initiate Gen buffer with new_instance and gen_class as paramether.
         If either new_instance or gen_class aren't passed, raise ValueError."""
-        if new_instace and gen_class:
-            self.new_instace = new_instace
+        if gen_class:
+            self.new_instace = new_instace if new_instace else gen_class
             self.gen_class = gen_class
         else:
             raise ValueError('Tehere is not enough param')
@@ -76,16 +78,9 @@ class GenBuffer(object):
             raise ValueError('gen is not defined or doesn\'t extends Gen')
         return cls(new_instace = gen.new_instace, gen_class = gen.__class__)
 
-
 class Gen(object):
     """Public Class
     Representation of an changeble information for an possible responce."""
-
-    def __init__(self, mutation_list = [], validation_list = []):
-        """Public method
-        Initiate Gen with mutation_list ans validation_list."""
-        self.mutation_list = mutation_list
-        self.validation_list = validation_list
 
     def create_buffer(self):
         return GenBuffer.factory_from_gen(gen = self)
@@ -97,38 +92,12 @@ class Gen(object):
             if not issubclass(x.__class__, cls): return False
         return True
 
-    @property
-    def validation_list(self): return self.__validation_list
-
-    @validation_list.setter
-    def validation_list(self, vl):
-        if (not self.all_subclass(vl, Validation)):
-            raise TypeError('elements in validation_list must extend Validation')
-        self.__validation_list = vl
-
-    @property
-    def mutation_list(self): return self.__mutation_list
-
-    @mutation_list.setter
-    def mutation_list(self, ml):
-        if (not self.all_subclass(ml, Mutation)):
-            raise TypeError('elements in mutation_list must extend Mutation')
-        self.__mutation_list = ml
-
-    def mutate(self):
-        """Public Method
-        If there is something in mutation list, execute self.validate
-        and in on in eatch five times, takes one of mutation_list (randomly) and execute it.
-        If there is not any Mutation avaliable, nothing happens."""
-        if self.mutation_list and not randint(0,4):
-            choice(self.mutation_list).mutate(self)
-        self.validate()
-
-    def validate(self):
-        """Public Method
-        Execute every Validation in validation_list."""
-        for val in self.validation_list:
-            val.validate(self)
+    @classmethod
+    def add_gen_class(cls, *extra):
+        class New(cls, *extra):
+            def __init__(self, *args, **k_args):
+                super(New, self).__init__(*args, **k_args)
+        return New                    
 
     def new_instace(self):
         return deepcopy(self)
@@ -136,12 +105,8 @@ class Gen(object):
 class Mutation(object, metaclass = ABCMeta):
     """Public Class
     Executable Mutation for a Gen, must recieve the method 'mutate' to execute when initiated
-    Mutate recieve self and the gen, it must change a something in gen, in order to change its value"""
-
-    def __init__(self, mutate = None):
-        """Public method
-        Initiate Mutation with mutate param"""
-        self.mutate = mutate if mutate else param['mutate']
+    Mutate recieve self and the gen, it must change a something in gen, in order to change its value
+    """
 
     @abstractmethod
     def mutate(self, gen):
@@ -155,28 +120,115 @@ class Validation(object, metaclass = ABCMeta):
     Executable Validation for a Gen, must recieve the method 'validate' to execute when initiated.
     validate recieve self and the Gen, it must change a something in Gen,
     in order to make it have a valid value."""
-    
-    @abstractmethod
-    def __init__(self, validate = None):
-        """Public method
-        Initiate Validation with validate param"""
-        self.validate = validate if validate else param['validate']
 
+    @abstractmethod
     def validate(self, gen):
         """Public Method
         validate gen in order to make it have an valid value.
         Must be overrided."""
         raise NotImplementedError()
 
+class MutableGen(Gen):
+
+    @property
+    def mutation_list(self):
+        return self.__mutation_list
+
+    @mutation_list.setter
+    def mutation_list(self, ml):
+        if not ml:
+            raise TypeError('MutableGen must have a not empty mutation_list')
+        if (not self.all_subclass(ml, Mutation)):
+            raise TypeError('elements in mutation_list must extend Mutation')
+        self.__mutation_list = ml
+
+    def mutate(self):
+        """Public Method
+        If there is something in mutation list, execute self.validate
+        and in on in eatch five times, takes one of mutation_list (randomly) and execute it.
+        If there is not any Mutation avaliable, nothing happens."""
+        choice(self.mutation_list).mutate(self)
+
+    @staticmethod
+    def with_default(cls, mutation_list):
+        class New(cls, MutableGen):
+            def __init__(self, *args, **k_args):
+                self.mutation_list = mutation_list
+                super(New, self).__init__(*args, **k_args)
+        return New
+
+class ValidatebleGen(Gen):
+
+    @property
+    def validation_list(self):
+        return self.__validation_list
+
+    @validation_list.setter
+    def validation_list(self, vl):
+        if not vl:
+            raise TypeError('ValidatebleGen must have a not empty validaton_list')
+        if not self.all_subclass(vl, Validation):
+            raise TypeError('elements in validation_list must extend Validation')
+        self.__validation_list = vl
+
+    def validate(self):
+        """Public Method
+        Execute every Validation in validation_list."""
+        for val in self.validation_list:
+            val.validate(self)
+
+    @staticmethod
+    def with_default(cls, validation_list):
+        class New(cls, ValidatebleGen):
+            def __init__(self, *args, **k_args):
+                self.validation_list = validation_list
+                super(New, self).__init__(*args, **k_args)
+        return New
+                
+
+class RequierGen(Gen):
+
+        @property
+        def req_gens(self): 
+            return self.__req_gens
+
+        @req_gens.setter
+        def req_gens(self, rg):
+            if not rg:
+                raise TypeError('RequierGen must have a not empty req_gens')
+            if not self.all_subclass(rg.values(), GenBuffer):
+                raise TypeError('values in req_gens must extend GenBuffer')
+            self.__req_gens = rg
+
+        @property
+        def individual(self): return self.__individual
+
+        @individual.setter
+        def individual(self, i):
+            if not i:
+                raise TypeError('individual in RequierGen must be defined')
+            if not issubclass(i.__class__, Individual):
+                raise TypeError('individual in RequierGen must extend Individual')
+            self.__individual = i
+
+        @property
+        def names(self):
+            if ('_names' not in self.__dict__ or not self._names) and self.req_gens:
+                self._names = [name for name in self.req_gens.keys()]
+            return self._names
+
+        @names.setter
+        def names(self, n):
+            self._names = n
+
 class ValuableGen(Gen):
     """Public Class
     Gen that has a value."""    
 
-    def __init__(self, value = None, mutation_list = [], validation_list = []):
+    def __init__(self, value = None):
         """Public method
-        Initiate ValuableGen with value, mutation_list ans validation_list."""
+        Initiate ValuableGen with value."""
         self.value = value
-        Gen.__init__(self, mutation_list = mutation_list, validation_list = validation_list)
 
         @property
         def value(self): return self.__value
@@ -190,25 +242,8 @@ class RunnableGen(Gen, metaclass = ABCMeta):
     """Public Class
     Gen that implements an run method."""
 
-    def __init__(self, names = [], individual = None, req_gens = {},mutation_list = [], validation_list = []):
-        """Public method
-        Iinitiate RunnableGen with names, individual, req_gen, mutation_list and validation_list."""
-        self.names = names if names else [k for k in req_gens.keys()]
-        self.individual = individual
-        self.req_gens = req_gens
-        Gen.__init__(self, mutation_list = mutation_list, validation_list = validation_list)
-
-        @property
-        def req_gens(self): return self._req_gens
-
-        @req_gens.setter
-        def req_gen(self, rg):
-            if (not all_subclass(rg.values(), Gen)):
-                raise TypeError('values in req_gens must extend Gen')
-            self._req_gens = rg
-
     @abstractmethod
-    def run(self, param):
+    def run(self, *args, **k_args):
         """Public Method Execute some task, returnnig or not.
         Must be overrided."""
         raise NotImplementedError()
@@ -219,10 +254,9 @@ class Individual(object, metaclass = ABCMeta):
     
     def __init__(self, base_gen_dict):
         self.gens = base_gen_dict
-        requier_list = [requier for requier in base_gen_dict.values()]
+        requier_list = [req for req in base_gen_dict.values() if issubclass(req.__class__, RequierGen)]
         while requier_list:
             requier = requier_list.pop(-1)
-            if not issubclass(requier.__class__, RunnableGen): continue
             requier.individual = self
             req_dict = requier.req_gens
             for name, buf in req_dict.items():
@@ -231,13 +265,25 @@ class Individual(object, metaclass = ABCMeta):
                     if issubclass(buf.gen_class, self.gens[name].__class__):continue
                     i = 0
                     new_name = name+'_'+str(i)
-                    while new_name in self.gens: name+'_'+str(i)
-                    if name != new_name:
-                        requier.req_gens[name] = requier.req_gens.pop(name)
-                        requier.names[requier.names.index(name)] = new_name
+                    while new_name in self.gens:
+                        new_name = name+'_'+str(i)
+                        i = i+1
+                    requier.req_gens[name] = requier.req_gens.pop(name)
+                    requier.names[requier.names.index(name)] = new_name
                 instance = buf.new_instace()
-                requier_list.append(instance)
+                if issubclass(instance.__class__, RequierGen):
+                    requier_list.append(instance)
                 self.gens[new_name] = instance
+        self.validate()
+
+    def validate(self):
+        for gen in [gen for gen in self.gens.values() if issubclass(gen.__class__, ValidatebleGen)]:
+            gen.validate()
+
+    def mutate(self):
+        for gen in self.gens.values():
+            if issubclass(gen.__class__, MutableGen):
+                gen.mutate()
 
     @logger.decorator
     def crossover(self, partner):
@@ -246,7 +292,7 @@ class Individual(object, metaclass = ABCMeta):
         if not issubclass(partner.__class__, Individual):
             raise TypeError("partner must be an Individual")
 
-        gen_name_list = [*self.gens.keys(), *partner.gens.keys()]
+        gen_name_list = set([*self.gens.keys(), *partner.gens.keys()])
         gen_dict = {}
         for gen_name in gen_name_list:
             if gen_name not in self.gens:
@@ -254,11 +300,12 @@ class Individual(object, metaclass = ABCMeta):
             elif gen_name not in partner.gens:
                 gen_dict[gen_name] = self.gens[gen_name]
             else:
-                choice((self.gens[gen_name], partner.gens[gen_name]))
+                gen_dict[gen_name] = choice((self.gens[gen_name], partner.gens[gen_name]))
+
 
         new_ind = self.__class__({k : v.new_instace() for k,v in gen_dict.items()})
-        for gen in new_ind.gens.values():
-            gen.mutate()
+        new_ind.mutate()
+        new_ind.validate()
         return new_ind
 
     def new_instace(self):
@@ -412,9 +459,8 @@ class Default(object):
         def validate(self, gen):
             self.validate_method(gen)
 
-        #@property
         @classmethod
-        def not_null_list(cls):       
+        def not_null_list(cls):
             def not_null(gen):
                 if gen.value == 0:
                     gen.value = 1 
@@ -424,19 +470,19 @@ class Default(object):
         @classmethod
         def simplify_frac_list(cls):
             def simplify_frac(gen):
+
                 d1 = gen.individual.gens[gen.names[0]]
                 d2 = gen.individual.gens[gen.names[1]]
+
 
                 primes = [2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 
                     53, 59, 61, 67, 71, 73, 79, 83, 89, 97]
 
+
                 for p in primes:
-                    while True:
-                        if not (d1.value%p) and not (d2.value%p):
-                            d1.value /= p
-                            d2.value /= p
-                            continue
-                        break
+                    while not (d1.value%p) and not (d2.value%p) and (d1.value) and (d2.value):
+                        d1.value /= p
+                        d2.value /= p
 
                 if d2.value < 0:
                     d2.value *= -1
@@ -452,45 +498,38 @@ class Default(object):
     simplify_frac_val_list = Val.simplify_frac_list()
     not_null_val_list = Val.not_null_list()
 
-    class IntGen(ValuableGen):
+    class IntGen(ValuableGen, MutableGen):
         """Public Class
         IntGen represents an integer value."""
-        def __init__(self, value = 0, validation_list = []):
-            ValuableGen.__init__(self, mutation_list = Default.int_mut_list, value = value, validation_list = validation_list) 
+        def __init__(self, value = 0):
+            self.value = value
+            self.mutation_list = Default.int_mut_list
 
-    class FltGen(ValuableGen):
+    class FltGen(ValuableGen, MutableGen):
         """Public Class
         FltGen represents an float value."""
-        def __init__(self, value = 0, validation_list = []):
-            ValuableGen.__init__(self, mutation_list = Default.float_mut_list, value = value, validation_list = validation_list) 
-            
-    class FracGen(RunnableGen):
+        def __init__(self, value = 0):
+            self.value = value
+            self.mutation_list = Default.float_mut_list
+
+    class FracGen(RequierGen, RunnableGen, ValidatebleGen):
         """Public Class
         FracGen represents an float value get by the division of two integers."""
-        def __init__(self, names = [], individual = None, req_gens = {}, mutation_list = []):
-            if names or len(names) != 2: 
-                names = [str(randint(0,99)) + 'd' + str(x) for x in range(2)]
+        def __init__(self):
+            names = [str(randint(0,99)) + 'd' + str(x) for x in range(2)]
+            down = GenBuffer(gen_class = ValidatebleGen.with_default(Default.IntGen, Default.not_null_val_list))
+            up = GenBuffer(gen_class = Default.IntGen)
 
-            down = self.get_gen_buf(validation_list =  Default.not_null_val_list, value = 1)
-            up = self.get_gen_buf(value = 1)
+            self.names = names
+            self.req_gens = {names[0]:up, names[1]:down}
+            self.validation_list = Default.simplify_frac_val_list
 
-            RunnableGen.__init__(self, 
-                req_gens = {names[0]:up, names[1]:down},
-                    validation_list = Default.simplify_frac_val_list,
-                    names = names, individual = individual, mutation_list = mutation_list)
-
-        def run(self, param):
+        def run(self):
             up = self.individual.gens[self.names[0]].value
             down = self.individual.gens[self.names[1]].value
             return up/down
 
-        def get_gen_buf(self, **param):
-            def get():
-                return Default.IntGen(**param)
-            return GenBuffer(new_instace = get, gen_class = Default.IntGen)
-
         def __str__(self):
-            self.validate()
             up = self.individual.gens[self.names[0]].value
-            down = self.individual.gens[self.names[1]].value            
+            down = self.individual.gens[self.names[1]].value
             return (str(up) + ('/' + str(down) if (down - 1) else ''))
