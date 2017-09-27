@@ -221,6 +221,17 @@ class RequierGen(Gen):
         def names(self, n):
             self._names = n
 
+        def update_requiered_name(self, new_name, old_name):
+            if new_name in self.names:
+                if old_name not in self.names:return
+                
+                raise TypeError('Cannot change '+old_name+' to '+new_name+'; '
+                    +new_name+' already in req_gens')
+            
+            self.req_gens[new_name] = self.req_gens.pop(old_name)
+            name_index = self.names.index(old_name)
+            self.names[name_index] = new_name
+
 class ValuableGen(Gen):
     """Public Class
     Gen that has a value."""    
@@ -258,23 +269,31 @@ class Individual(object, metaclass = ABCMeta):
         while requier_list:
             requier = requier_list.pop(-1)
             requier.individual = self
-            req_dict = requier.req_gens
-            for name, buf in req_dict.items():
-                new_name = name
-                if name in self.gens:
-                    if issubclass(buf.gen_class, self.gens[name].__class__):continue
-                    i = 0
-                    new_name = name+'_'+str(i)
-                    while new_name in self.gens:
-                        new_name = name+'_'+str(i)
-                        i = i+1
-                    requier.req_gens[name] = requier.req_gens.pop(name)
-                    requier.names[requier.names.index(name)] = new_name
-                instance = buf.new_instace()
-                if issubclass(instance.__class__, RequierGen):
-                    requier_list.append(instance)
-                self.gens[new_name] = instance
+            self.add_gens_from_requier(requier, requier_list.append)            
         self.validate()
+
+    def add_gens_from_requier(self, requier, requier_list_append = None):
+        req_dict = requier.req_gens
+        for name, buf in req_dict.items():
+            new_name = name
+            if name in self.gens and issubclass(buf.gen_class, self.gens[name].__class__): 
+                continue
+            new_name = self.get_new_gen_name(name, buf.gen_class)
+            if new_name != name:
+                requier.update_requiered_name(new_name, name)
+            instance = buf.new_instace()
+            if requier_list_append and issubclass(instance.__class__, RequierGen):
+                requier_list_append(instance)
+            self.gens[new_name] = instance
+
+    def get_new_gen_name(self, name, gen_class):
+        new_name = name
+        i = 1
+        while new_name in self.gens:
+            new_name = name+'_'+str(i)
+            i = i+1
+        return new_name
+
 
     def validate(self):
         for gen in [gen for gen in self.gens.values() if issubclass(gen.__class__, ValidatebleGen)]:
