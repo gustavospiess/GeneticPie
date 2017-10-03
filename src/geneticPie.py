@@ -3,12 +3,11 @@ from copy   import deepcopy
 from random import randint, choice
 from time   import asctime
 
-import traceback
-
 #Global configurations
 debug = False
 
 class Logger(object):
+    """Under construction"""
 
     def __init__(self, print_log = False, list_log = False):
         if list_log:
@@ -55,15 +54,16 @@ logger = Logger(list_log = debug)
 
 class GenBuffer(object):
     """Public Class 
-    Represents an possible instance of gen, for individual instence contruction.
-    In this prosses exists the possibility of not needing to instance every gen that are required.
+    Represents an possible instance of gen, for chromosome instance construction.
+    In this process exists the possibility of not needing to instance every gen that are required.
     GenBuffer has the attributes new_instance, as callable, and gen_class, as the class of the gen.
-    new_instance must be an callable, with no paramether, that returns an new instance of gen_class"""
+    new_instance must be an callable, with no parameters, that returns an new instance of gen_class"""
 
     def __init__(self, new_instace = None, gen_class = None):
         """Public method
-        Initiate Gen buffer with new_instance and gen_class as paramether.
-        If either new_instance or gen_class aren't passed, raise ValueError."""
+        Initiate Gen buffer with new_instance and gen_class as parameter.
+        If there is not new_instance, gen_class will be used to instance Gen.
+        If there is not gen_class, a value error will be raised."""
         if gen_class:
             self.new_instace = new_instace if new_instace else gen_class
             self.gen_class = gen_class
@@ -73,16 +73,18 @@ class GenBuffer(object):
     @classmethod
     def factory_from_gen(cls, gen = None):
         """Public class method
-        instance an GenBuffer from an Gen instance, takeing its __class__ and new_instance"""
+        Instance an GenBuffer from an Gen instance, taking its __class__ and new_instance.
+        If gen is not """
         if not gen or not issubclass(gen.__class__, Gen):
-            raise ValueError('gen is not defined or doesn\'t extends Gen')
+            raise ValueError('gen is not defined or does not extends Gen')
         return cls(new_instace = gen.new_instace, gen_class = gen.__class__)
 
 class Gen(object):
     """Public Class
-    Representation of an changeble information for an possible responce."""
+    Representation of an changeable information for an possible response."""
 
     def create_buffer(self):
+        """Creates and returns an GenBuffer instance for the Gen object."""
         return GenBuffer.factory_from_gen(gen = self)
 
     def all_subclass(self, lst, cls):
@@ -90,16 +92,10 @@ class Gen(object):
         verify if all elements in iterable lst extends cls"""
         for x in lst:
             if not issubclass(x.__class__, cls): return False
-        return True
-
-    @classmethod
-    def add_gen_class(cls, *extra):
-        class New(cls, *extra):
-            def __init__(self, *args, **k_args):
-                super(New, self).__init__(*args, **k_args)
-        return New                    
+        return True           
 
     def new_instace(self):
+        """Generate an new instance of Gen class or subclass by deepcopy method"""
         return deepcopy(self)
 
 class Mutation(object, metaclass = ABCMeta):
@@ -129,6 +125,11 @@ class Validation(object, metaclass = ABCMeta):
         raise NotImplementedError()
 
 class MutableGen(Gen):
+    """Public class.
+    That Gen must receive mutation process, as mutation_list (property) and mutate (method).
+    When mutate is called, it checks a random value to have a 20% chance of mutating, if mutate
+    it randomly take one of mutation_list and run (calling mutate method)
+    """
 
     @property
     def mutation_list(self):
@@ -145,7 +146,7 @@ class MutableGen(Gen):
     def mutate(self):
         """Public Method
         If there is something in mutation list, execute self.validate
-        and in on in eatch five times, takes one of mutation_list (randomly) and execute it.
+        and in on in each five times, takes one of mutation_list (randomly) and execute it.
         If there is not any Mutation avaliable, nothing happens."""
         choice(self.mutation_list).mutate(self)
 
@@ -158,6 +159,10 @@ class MutableGen(Gen):
         return New
 
 class ValidatebleGen(Gen):
+    """Public class.
+    That Gem must receive an validation process, as validation_list (property) and validate(method).
+    When validate is called, it calls every Validation in validation_list.
+    """
 
     @property
     def validation_list(self):
@@ -185,52 +190,56 @@ class ValidatebleGen(Gen):
                 super(New, self).__init__(*args, **k_args)
         return New
                 
-
 class RequierGen(Gen):
+    """Public Class.
+    That gen must require an dictionary of other gens in the same Chromosome it belongs.
+    The Gen's that are required are represented in req_gens dict and names list, both property's.
+    Also, there are chromosome property, a reference to the Chromosome it belongs.
+    Names must be a list of the req_gens's key"""
 
-        @property
-        def req_gens(self): 
-            return self.__req_gens
+    @property
+    def req_gens(self): 
+        return self.__req_gens
 
-        @req_gens.setter
-        def req_gens(self, rg):
-            if not rg:
-                raise TypeError('RequierGen must have a not empty req_gens')
-            if not self.all_subclass(rg.values(), GenBuffer):
-                raise TypeError('values in req_gens must extend GenBuffer')
-            self.__req_gens = rg
+    @req_gens.setter
+    def req_gens(self, rg):
+        if not rg:
+            raise TypeError('RequierGen must have a not empty req_gens')
+        if not self.all_subclass(rg.values(), GenBuffer):
+            raise TypeError('values in req_gens must extend GenBuffer')
+        self.__req_gens = rg
 
-        @property
-        def individual(self): return self.__individual
+    @property
+    def chromosome(self): return self.__chromosome
 
-        @individual.setter
-        def individual(self, i):
-            if not i:
-                raise TypeError('individual in RequierGen must be defined')
-            if not issubclass(i.__class__, Individual):
-                raise TypeError('individual in RequierGen must extend Individual')
-            self.__individual = i
+    @chromosome.setter
+    def chromosome(self, i):
+        if not i:
+            raise TypeError('chromosome in RequierGen must be defined')
+        if not issubclass(i.__class__, Chromosome):
+            raise TypeError('chromosome in RequierGen must extend Chromosome')
+        self.__chromosome = i
 
-        @property
-        def names(self):
-            if ('_names' not in self.__dict__ or not self._names) and self.req_gens:
-                self._names = [name for name in self.req_gens.keys()]
-            return self._names
+    @property
+    def names(self):
+        if ('_names' not in self.__dict__ or not self._names) and self.req_gens:
+            self._names = [name for name in self.req_gens.keys()]
+        return self._names
 
-        @names.setter
-        def names(self, n):
-            self._names = n
+    @names.setter
+    def names(self, n):
+        self._names = n
 
-        def update_requiered_name(self, new_name, old_name):
-            if new_name in self.names:
-                if old_name not in self.names:return
-                
-                raise TypeError('Cannot change '+old_name+' to '+new_name+'; '
-                    +new_name+' already in req_gens')
+    def update_requiered_name(self, new_name, old_name):
+        if new_name in self.names:
+            if old_name not in self.names:return
             
-            self.req_gens[new_name] = self.req_gens.pop(old_name)
-            name_index = self.names.index(old_name)
-            self.names[name_index] = new_name
+            raise TypeError('Cannot change '+old_name+' to '+new_name+'; '
+                +new_name+' already in req_gens')
+        
+        self.req_gens[new_name] = self.req_gens.pop(old_name)
+        name_index = self.names.index(old_name)
+        self.names[name_index] = new_name
 
 class ValuableGen(Gen):
     """Public Class
@@ -259,7 +268,7 @@ class RunnableGen(Gen, metaclass = ABCMeta):
         Must be overrided."""
         raise NotImplementedError()
 
-class Individual(object, metaclass = ABCMeta):
+class Chromosome(object, metaclass = ABCMeta):
     """Public Class
     Representation of an possible response."""
     
@@ -268,7 +277,7 @@ class Individual(object, metaclass = ABCMeta):
         requier_list = [req for req in base_gen_dict.values() if issubclass(req.__class__, RequierGen)]
         while requier_list:
             requier = requier_list.pop(-1)
-            requier.individual = self
+            requier.chromosome = self
             self.add_gens_from_requier(requier, requier_list.append)            
         self.validate()
 
@@ -307,9 +316,9 @@ class Individual(object, metaclass = ABCMeta):
     @logger.decorator
     def crossover(self, partner):
         """Public Method
-        Return a new instance of the Indiviual class, based on its gens end partner gens."""
-        if not issubclass(partner.__class__, Individual):
-            raise TypeError("partner must be an Individual")
+        Return a new instance of the Chromosome class, based on its gens end partner gens."""
+        if not issubclass(partner.__class__, Chromosome):
+            raise TypeError("partner must be an Chromosome")
 
         gen_name_list = set([*self.gens.keys(), *partner.gens.keys()])
         gen_dict = {}
@@ -322,10 +331,10 @@ class Individual(object, metaclass = ABCMeta):
                 gen_dict[gen_name] = choice((self.gens[gen_name], partner.gens[gen_name]))
 
 
-        new_ind = self.__class__({k : v.new_instace() for k,v in gen_dict.items()})
-        new_ind.mutate()
-        new_ind.validate()
-        return new_ind
+        new_chr = self.__class__({k : v.new_instace() for k,v in gen_dict.items()})
+        new_chr.mutate()
+        new_chr.validate()
+        return new_chr
 
     def new_instace(self):
         """Public Method
@@ -335,8 +344,8 @@ class Individual(object, metaclass = ABCMeta):
     @abstractmethod
     def calculate_fitness(self, param):
         """Public Method
-        Calculate and return an numerical indicator of Individual addaptability.
-        Zero is te perfect response, representing that the individual is the most optimizated response.
+        Calculate and return an numerical indicator of Chromosome addaptability.
+        Zero is te perfect response, representing that the chromosome is the most optimizated response.
         Must be overrided."""
         NotImplementedError()
 
@@ -350,14 +359,14 @@ class Simulation(object):
         else:
             self.population = []
 
-        self.ind_params = []
+        self.chr_params = []
 
     @logger.decorator
     def eliminate(self, list_selector = None, single_selector = None):
         """Public Method
         Sort population using the last value passad to this object's attribute sort_by_fitness.
         If list_selector is received, the new population is the return of it.
-        list_selector must be a function that receive the current population as paramether
+        list_selector must be a function that receive the current population as parameter
         Else, if single_selector is received, the new population will be the part of 
         the current that being passed to single_selector makes it return true"""
         self.sort_by_fitness()
@@ -365,7 +374,7 @@ class Simulation(object):
         if (list_selector):
             self.population = list_selector(self.population)
         elif single_selector:
-            self.population = [ind for ind in self.population if single_selector(ind)]
+            self.population = [chro for chro in self.population if single_selector(chro)]
         else:
             self.population = self.population[0:int((len(self.population)+1)/2)]
 
@@ -373,10 +382,10 @@ class Simulation(object):
 
     def sort_by_fitness(self, param = None):
 
-        if param and not param in self.ind_params:
-            self.ind_params.append(param)
+        if param and not param in self.chr_params:
+            self.chr_params.append(param)
 
-        def key(ind): return ind.calculate_fitness(self.ind_params[-1])
+        def key(chro): return chro.calculate_fitness(self.chr_params[-1])
 
         self.population.sort(key = key)
         return self
@@ -437,7 +446,6 @@ class Default(object):
                     cls(mod_10),
                     cls(mod_100)]
 
-        #@property
         @classmethod
         def float_list(cls):
             def div_1(gen):
@@ -485,31 +493,45 @@ class Default(object):
                     gen.value = 1 
             return [cls(not_null)]
 
-        #@property
         @classmethod
         def simplify_frac_list(cls):
-            def simplify_frac(gen):
 
-                d1 = gen.individual.gens[gen.names[0]]
-                d2 = gen.individual.gens[gen.names[1]]
+            def negative_trate(gen):
 
-
-                primes = [2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 
-                    53, 59, 61, 67, 71, 73, 79, 83, 89, 97]
-
-
-                for p in primes:
-                    while not (d1.value%p) and not (d2.value%p) and (d1.value) and (d2.value):
-                        d1.value /= p
-                        d2.value /= p
+                d1 = gen.chromosome.gens[gen.names[0]]
+                d2 = gen.chromosome.gens[gen.names[1]]
 
                 if d2.value < 0:
                     d2.value *= -1
                     d1.value *= -1
 
+            def simplify_frac(gen):
+
+                d1 = gen.chromosome.gens[gen.names[0]]
+                d2 = gen.chromosome.gens[gen.names[1]]
+
+                for p in range(min(abs(d1.value//2), abs(d2.value//2)), 1, -1):
+                    if not (d1.value%p) and not (d2.value%p) and (d1.value) and (d2.value):
+                        d1.value /= p
+                        d2.value /= p
+
+            def int_treat(gen):
+
+                d1 = gen.chromosome.gens[gen.names[0]]
+                d2 = gen.chromosome.gens[gen.names[1]]
+
+                if d1.value and d2.value and not (d1.value%d2.value):
+                    d1.value /= d2.value
+                    d2.value = 1
+
+                if d2.value and d1.value and not (d2.value%d1.value):
+                    d2.value /= d1.value
+                    d1.value = 1
+
                 d1.value = int(d1.value)
                 d2.value = int(d2.value)
-            return [cls(simplify_frac)]
+
+            return [cls(simplify_frac), cls(negative_trate), cls(int_treat)]
 
     float_mut_list = Mut.float_list()
     int_mut_list = Mut.int_list()
@@ -544,11 +566,11 @@ class Default(object):
             self.validation_list = Default.simplify_frac_val_list
 
         def run(self):
-            up = self.individual.gens[self.names[0]].value
-            down = self.individual.gens[self.names[1]].value
+            up = self.chromosome.gens[self.names[0]].value
+            down = self.chromosome.gens[self.names[1]].value
             return up/down
 
         def __str__(self):
-            up = self.individual.gens[self.names[0]].value
-            down = self.individual.gens[self.names[1]].value
+            up = self.chromosome.gens[self.names[0]].value
+            down = self.chromosome.gens[self.names[1]].value
             return (str(up) + ('/' + str(down) if (down - 1) else ''))
