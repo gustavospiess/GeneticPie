@@ -2,3 +2,7 @@
 *.pyc
 
 src/temp\.*
+
+src/temp/
+
+temp/
