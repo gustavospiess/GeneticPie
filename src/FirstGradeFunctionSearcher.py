@@ -1,7 +1,7 @@
 from geneticPie import *
 import random
 
-class FuncFGen(RunnableGen, RequierGen):
+class FuncFGen(RunnableGen, RequireerGen):
 
     def __init__(self):
         buff = GenBuffer(gen_class = Default.FracGen)
@@ -25,11 +25,7 @@ class FuncFChr(Chromosome):
         total = 0
         for sub_param in param:
             parcial = self.gens['main'].run(sub_param[0])
-            if parcial != param[1]:
-                if parcial < sub_param[1]:
-                    parcial = sub_param[1] - parcial
-                else:
-                    parcial = parcial - sub_param[1]
+            parcial = abs(parcial - sub_param[1])
             total = total + parcial
 
         return total

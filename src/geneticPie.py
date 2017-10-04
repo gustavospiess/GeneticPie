@@ -68,26 +68,26 @@ class GenBuffer(object):
             self.new_instace = new_instace if new_instace else gen_class
             self.gen_class = gen_class
         else:
-            raise ValueError('Tehere is not enough param')
+            raise ValueError('There is not enough parameters')
 
     @classmethod
     def factory_from_gen(cls, gen = None):
         """Public class method
         Instance an GenBuffer from an Gen instance, taking its __class__ and new_instance.
-        If gen is not """
+        If gen is not."""
         if not gen or not issubclass(gen.__class__, Gen):
             raise ValueError('gen is not defined or does not extends Gen')
         return cls(new_instace = gen.new_instace, gen_class = gen.__class__)
 
 class Gen(object):
     """Public Class
-    Representation of an changeable information for an possible response."""
+    Representation of information for an possible response."""
 
     def create_buffer(self):
         """Creates and returns an GenBuffer instance for the Gen object."""
         return GenBuffer.factory_from_gen(gen = self)
 
-    def all_subclass(self, lst, cls):
+    def _all_subclass(self, lst, cls):
         """Protected method
         verify if all elements in iterable lst extends cls"""
         for x in lst:
@@ -100,28 +100,28 @@ class Gen(object):
 
 class Mutation(object, metaclass = ABCMeta):
     """Public Class
-    Executable Mutation for a Gen, must recieve the method 'mutate' to execute when initiated
-    Mutate recieve self and the gen, it must change a something in gen, in order to change its value
+    Executable Mutation for a MutableGen, must receive the method 'mutate' to execute when initiated
+    Mutate receive self and the gen, it must change a something in gen, in order to change its value
     """
 
     @abstractmethod
     def mutate(self, gen):
         """Public Method
         change something in Gen in order to change its value.
-        Must be overrided."""
+        Must be overridden."""
         raise NotImplementedError()
 
 class Validation(object, metaclass = ABCMeta):
     """Public Class
-    Executable Validation for a Gen, must recieve the method 'validate' to execute when initiated.
-    validate recieve self and the Gen, it must change a something in Gen,
+    Executable Validation for a ValidatebleGen, must receive the method 'validate' to execute when initiated.
+    validate receive self and the Gen, it must change a something in Gen,
     in order to make it have a valid value."""
 
     @abstractmethod
     def validate(self, gen):
         """Public Method
         validate gen in order to make it have an valid value.
-        Must be overrided."""
+        Must be overridden."""
         raise NotImplementedError()
 
 class MutableGen(Gen):
@@ -139,7 +139,7 @@ class MutableGen(Gen):
     def mutation_list(self, ml):
         if not ml:
             raise TypeError('MutableGen must have a not empty mutation_list')
-        if (not self.all_subclass(ml, Mutation)):
+        if (not self._all_subclass(ml, Mutation)):
             raise TypeError('elements in mutation_list must extend Mutation')
         self.__mutation_list = ml
 
@@ -147,7 +147,7 @@ class MutableGen(Gen):
         """Public Method
         If there is something in mutation list, execute self.validate
         and in on in each five times, takes one of mutation_list (randomly) and execute it.
-        If there is not any Mutation avaliable, nothing happens."""
+        If there is not any Mutation available, nothing happens."""
         choice(self.mutation_list).mutate(self)
 
     @staticmethod
@@ -172,7 +172,7 @@ class ValidatebleGen(Gen):
     def validation_list(self, vl):
         if not vl:
             raise TypeError('ValidatebleGen must have a not empty validaton_list')
-        if not self.all_subclass(vl, Validation):
+        if not self._all_subclass(vl, Validation):
             raise TypeError('elements in validation_list must extend Validation')
         self.__validation_list = vl
 
@@ -190,7 +190,7 @@ class ValidatebleGen(Gen):
                 super(New, self).__init__(*args, **k_args)
         return New
                 
-class RequierGen(Gen):
+class RequireerGen(Gen):
     """Public Class.
     That gen must require an dictionary of other gens in the same Chromosome it belongs.
     The Gen's that are required are represented in req_gens dict and names list, both property's.
@@ -204,8 +204,8 @@ class RequierGen(Gen):
     @req_gens.setter
     def req_gens(self, rg):
         if not rg:
-            raise TypeError('RequierGen must have a not empty req_gens')
-        if not self.all_subclass(rg.values(), GenBuffer):
+            raise TypeError('RequireerGen must have a not empty req_gens')
+        if not self._all_subclass(rg.values(), GenBuffer):
             raise TypeError('values in req_gens must extend GenBuffer')
         self.__req_gens = rg
 
@@ -213,12 +213,12 @@ class RequierGen(Gen):
     def chromosome(self): return self.__chromosome
 
     @chromosome.setter
-    def chromosome(self, i):
-        if not i:
-            raise TypeError('chromosome in RequierGen must be defined')
-        if not issubclass(i.__class__, Chromosome):
-            raise TypeError('chromosome in RequierGen must extend Chromosome')
-        self.__chromosome = i
+    def chromosome(self, chro):
+        if not chro:
+            raise TypeError('chromosome in RequireerGen must be defined')
+        if not issubclass(chro.__class__, Chromosome):
+            raise TypeError('chromosome in RequireerGen must extend Chromosome')
+        self.__chromosome = chro
 
     @property
     def names(self):
@@ -230,7 +230,9 @@ class RequierGen(Gen):
     def names(self, n):
         self._names = n
 
-    def update_requiered_name(self, new_name, old_name):
+    def update_requireered_name(self, new_name, old_name):
+        """Public method.W
+        """
         if new_name in self.names:
             if old_name not in self.names:return
             
@@ -264,8 +266,8 @@ class RunnableGen(Gen, metaclass = ABCMeta):
 
     @abstractmethod
     def run(self, *args, **k_args):
-        """Public Method Execute some task, returnnig or not.
-        Must be overrided."""
+        """Public Method Execute some task, returning or not.
+        Must be override."""
         raise NotImplementedError()
 
 class Chromosome(object, metaclass = ABCMeta):
@@ -274,25 +276,25 @@ class Chromosome(object, metaclass = ABCMeta):
     
     def __init__(self, base_gen_dict):
         self.gens = base_gen_dict
-        requier_list = [req for req in base_gen_dict.values() if issubclass(req.__class__, RequierGen)]
-        while requier_list:
-            requier = requier_list.pop(-1)
-            requier.chromosome = self
-            self.add_gens_from_requier(requier, requier_list.append)            
+        requireer_list = [req for req in base_gen_dict.values() if issubclass(req.__class__, RequireerGen)]
+        while requireer_list:
+            requireer = requireer_list.pop(-1)
+            requireer.chromosome = self
+            self.add_gens_from_requireer(requireer, requireer_list.append)            
         self.validate()
 
-    def add_gens_from_requier(self, requier, requier_list_append = None):
-        req_dict = requier.req_gens
+    def add_gens_from_requireer(self, requireer, requireer_list_append = None):
+        req_dict = requireer.req_gens
         for name, buf in req_dict.items():
             new_name = name
             if name in self.gens and issubclass(buf.gen_class, self.gens[name].__class__): 
                 continue
             new_name = self.get_new_gen_name(name, buf.gen_class)
             if new_name != name:
-                requier.update_requiered_name(new_name, name)
+                requireer.update_requireered_name(new_name, name)
             instance = buf.new_instace()
-            if requier_list_append and issubclass(instance.__class__, RequierGen):
-                requier_list_append(instance)
+            if requireer_list_append and issubclass(instance.__class__, RequireerGen):
+                requireer_list_append(instance)
             self.gens[new_name] = instance
 
     def get_new_gen_name(self, name, gen_class):
@@ -344,9 +346,9 @@ class Chromosome(object, metaclass = ABCMeta):
     @abstractmethod
     def calculate_fitness(self, param):
         """Public Method
-        Calculate and return an numerical indicator of Chromosome addaptability.
-        Zero is te perfect response, representing that the chromosome is the most optimizated response.
-        Must be overrided."""
+        Calculate and return an numerical indicator of Chromosome adaptability.
+        Zero is the perfect response, representing that the chromosome is the most optimized response.
+        Must be overridden."""
         NotImplementedError()
 
 class Simulation(object):
@@ -364,7 +366,7 @@ class Simulation(object):
     @logger.decorator
     def eliminate(self, list_selector = None, single_selector = None):
         """Public Method
-        Sort population using the last value passad to this object's attribute sort_by_fitness.
+        Sort population using the last value passed to this object's attribute sort_by_fitness.
         If list_selector is received, the new population is the return of it.
         list_selector must be a function that receive the current population as parameter
         Else, if single_selector is received, the new population will be the part of 
@@ -553,7 +555,7 @@ class Default(object):
             self.value = value
             self.mutation_list = Default.float_mut_list
 
-    class FracGen(RequierGen, RunnableGen, ValidatebleGen):
+    class FracGen(RequireerGen, RunnableGen, ValidatebleGen):
         """Public Class
         FracGen represents an float value get by the division of two integers."""
         def __init__(self):
